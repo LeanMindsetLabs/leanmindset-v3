@@ -1,0 +1,91 @@
+.bottom-nav {
+  flex-shrink: 0;
+  background: #0f1112;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px 4px calc(var(--safe-bottom) + 4px);
+}
+
+.bottom-nav-items {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-height: 52px;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-height: 44px;
+  color: #636366;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.bottom-nav-item.active {
+  color: #ffffff;
+}
+
+.bottom-nav-item span {
+  font-size: 8px;
+  line-height: 10px;
+  font-weight: 500;
+  color: #636366;
+  letter-spacing: -0.15px;
+}
+
+.bottom-nav-item.active span {
+  color: #ffffff;
+}
+
+.bottom-nav-item.coach-fab {
+  gap: 5px;
+  position: relative;
+  z-index: 2;
+}
+
+.bottom-nav-item.coach-fab .fab-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #3d7bff;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.bottom-nav-item.coach-fab:not(.active) .fab-label {
+  color: #636366;
+}
+
+.bottom-nav-item.coach-fab.active .fab-label {
+  color: #3d7bff;
+}
+
+.coach-orb {
+  width: 52px;
+  height: 52px;
+  margin-top: -28px;
+  border-radius: 50%;
+  background: #222529;
+  border: 2.5px solid #3d7bff;
+  color: #7eb6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px 2px rgba(61, 123, 255, 0.28);
+}
+
+.coach-orb.active {
+  box-shadow:
+    0 0 16px 4px rgba(61, 123, 255, 0.5),
+    0 0 28px 8px rgba(61, 123, 255, 0.22);
+  color: #9ec4ff;
+  border-color: #6bb0ff;
+}
+
+html.keyboard-open .bottom-nav {
+  display: none;
+}

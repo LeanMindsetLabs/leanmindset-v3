@@ -1,0 +1,6 @@
+# LeanMindset V3
+
+Epic: Native responsive architecture
+Feature: Expo foundation
+Story: One codebase across iPhone and Android viewports
+Task: Tokens, screen primitives, Expo Router tabs

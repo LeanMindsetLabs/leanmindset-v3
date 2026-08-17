@@ -1,0 +1,199 @@
+/* Locked phone preview: iPhone 15 · 393×852 · status bar always above UI */
+
+.iphone-stage {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px 16px;
+  background: #07090c;
+}
+
+.iphone-scale-slot {
+  width: calc(393px * var(--iphone-scale, 1));
+  height: calc(852px * var(--iphone-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iphone-15 {
+  position: relative;
+  width: 393px;
+  height: 852px;
+  flex-shrink: 0;
+  transform: scale(var(--iphone-scale, 1));
+  transform-origin: center center;
+}
+
+.iphone-15-bezel {
+  width: 393px;
+  height: 852px;
+  padding: 0;
+  background: #0c0c0e;
+  border-radius: 55px;
+  box-shadow:
+    0 0 0 11px #1b1b1f,
+    0 0 0 12px #3a3a40,
+    0 28px 80px rgba(0, 0, 0, 0.55);
+}
+
+.iphone-15-screen {
+  width: 393px;
+  height: 852px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 47px;
+  background: #0f1112;
+  /* Status band is in-flow (59px). Body starts below it — do not reuse 59px here. */
+  --safe-top: 0px;
+  --safe-bottom: 34px;
+}
+
+/* Hard-locked status band: time · Dynamic Island · signal/wifi/battery */
+.ios-status {
+  flex: 0 0 59px;
+  width: 100%;
+  height: 59px;
+  position: relative;
+  z-index: 20;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.iphone-15-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.iphone-15-side {
+  position: absolute;
+  width: 3px;
+  z-index: 2;
+}
+
+.iphone-15-side-left {
+  left: -14px;
+  top: 148px;
+}
+
+.iphone-15-silent,
+.iphone-15-btn,
+.iphone-15-power {
+  display: block;
+  background: #2a2a2e;
+  border-radius: 2px;
+}
+
+.iphone-15-silent {
+  width: 3px;
+  height: 28px;
+  margin-bottom: 18px;
+}
+
+.iphone-15-btn {
+  width: 3px;
+  height: 52px;
+  margin-bottom: 10px;
+}
+
+.iphone-15-side-right {
+  right: -14px;
+  top: 210px;
+}
+
+.iphone-15-power {
+  width: 3px;
+  height: 92px;
+}
+
+.ios-time {
+  position: absolute;
+  left: 22px;
+  top: 16px;
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 600;
+  letter-spacing: -0.32px;
+  color: #ffffff;
+}
+
+.ios-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 125px;
+  height: 36px;
+  background: #000000;
+  border-radius: 20px;
+}
+
+.ios-status-right {
+  position: absolute;
+  right: 18px;
+  top: 17px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ios-home-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 5px;
+  border-radius: 100px;
+  background: #f4f4f5;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.iphone-caption {
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  color: #7d8b9c;
+}
+
+/* Capacitor / real device only — never apply this in Cursor browser preview */
+html.native-shell .iphone-stage {
+  padding: 0;
+  min-height: 100dvh;
+  gap: 0;
+  background: #0f1112;
+}
+
+html.native-shell .iphone-15 {
+  transform: none;
+}
+
+html.native-shell .iphone-15-bezel {
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+html.native-shell .iphone-15-screen {
+  width: 100vw;
+  height: 100dvh;
+  border-radius: 0;
+  --safe-top: env(safe-area-inset-top, 59px);
+  --safe-bottom: env(safe-area-inset-bottom, 34px);
+}
+
+html.native-shell .iphone-15-side,
+html.native-shell .ios-status,
+html.native-shell .ios-home-indicator,
+html.native-shell .iphone-caption {
+  display: none;
+}

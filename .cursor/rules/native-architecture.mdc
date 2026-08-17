@@ -1,0 +1,17 @@
+---
+description: Responsive native layout rules for LeanMindset Expo screens
+alwaysApply: true
+---
+
+# Responsive Layout
+
+Build screens with content + flexbox + safe area + constraints.
+
+Forbidden: full-screen `393/852`, `scale(width/393)`, device-name hacks, absolute layout for ordinary UI, magic `top`/`height` coordinates.
+
+Allowed absolute: badges, overlays, modal chrome, artwork, ring-center labels.
+
+Tokens: `src/theme` (`colors`, `spacing`, `typography`, `radius`, `layout`).
+Primitives: `src/layout` (`AppScreen`, `ScrollableScreen`, `KeyboardScreen`, `useResponsiveLayout`).
+Viewport classes: compact / standard / large. Max content width `430`.
+Portrait only.

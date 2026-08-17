@@ -1,0 +1,162 @@
+:root {
+  --background-top: #0f1112;
+  --background-bottom: #0f1112;
+
+  --surface: #222529;
+  --surface-raised: #222529;
+  --surface-highlight: #2d3136;
+  --card: #222529;
+  --card-nested: #2d3136;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-blue: rgba(61, 123, 255, 0.55);
+  --border-blue-strong: rgba(61, 123, 255, 0.65);
+
+  --text-primary: #f4f4f5;
+  --text-secondary: #8e8e93;
+  --text-muted: #636366;
+  --text-subtitle: #8e8e93;
+
+  --blue: #3d7bff;
+  --blue-bright: #4a86ff;
+  --blue-dark: #153f9e;
+
+  --green: #19e68c;
+  --yellow: #f5c400;
+  --purple: #9d6cff;
+  --highlight-note-bg: #1a1b1e;
+  --highlight-cta: #c77dff;
+  --highlight-border-start: #f3c4a2;
+  --highlight-border-end: #b44aff;
+
+  --lm-bg-top: #0f1112;
+  --lm-bg-bottom: #0f1112;
+  --lm-surface: #222529;
+  --lm-surface-2: #222529;
+  --lm-surface-3: #2d3136;
+  --lm-border: rgba(255, 255, 255, 0.08);
+  --lm-divider: rgba(255, 255, 255, 0.06);
+  --lm-border-blue: rgba(61, 123, 255, 0.5);
+  --lm-text: #f4f4f5;
+  --lm-text-secondary: #8e8e93;
+  --lm-text-muted: #636366;
+  --lm-blue: #3d7bff;
+  --lm-blue-bright: #5B9DFF;
+  --lm-blue-dark: #153f9c;
+  --lm-green: #19e68c;
+  --lm-yellow: #f5c400;
+  --lm-purple: #9a6cff;
+  --lm-red: #ff5e72;
+
+  --nav-inactive-icon: #636366;
+  --nav-inactive-text: #636366;
+
+  --font:
+    -apple-system, blinkmacsystemfont, "SF Pro Display", "SF Pro Text",
+    "Inter", sans-serif;
+
+  /* Browser preview: status band is layout-reserved in DeviceFrame (59px). */
+  --safe-top: 0px;
+  --safe-bottom: 34px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: #07090c;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.app-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background:
+    radial-gradient(70% 34% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 72%),
+    linear-gradient(180deg, #1a1c1e 0%, #121314 22%, #0f1112 100%);
+}
+
+.placeholder-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 24px) 24px 24px;
+  text-align: center;
+}
+
+.placeholder-screen h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.placeholder-screen p {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+/* Whoop-style highlighted note: dark slate + peach→purple gradient border */
+.highlight-note,
+.whoop-note,
+.home-mindset,
+.home-win,
+.why-card,
+.insight-card,
+.improvement-card,
+.coach-focus,
+.meals-note,
+.insight-protein {
+  background:
+    linear-gradient(var(--highlight-note-bg), var(--highlight-note-bg)) padding-box,
+    linear-gradient(
+      135deg,
+      var(--highlight-border-start) 0%,
+      #e8a07a 16%,
+      #c77dff 62%,
+      var(--highlight-border-end) 100%
+    ) border-box;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  box-shadow:
+    0 0 18px rgba(168, 85, 247, 0.16),
+    0 0 10px rgba(243, 196, 162, 0.08);
+}
+
+.highlight-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--highlight-cta);
+}

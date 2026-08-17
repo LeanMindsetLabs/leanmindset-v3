@@ -1,0 +1,26 @@
+export const colors = {
+  background: "#0F1112",
+  backgroundRaised: "#121314",
+  surface: "#222529",
+  surfaceElevated: "#2D3136",
+  highlightNote: "#1A1B1E",
+  textPrimary: "#F4F4F5",
+  textSecondary: "#8E8E93",
+  textMuted: "#636366",
+  accent: "#19E68C",
+  accentBlue: "#3D7BFF",
+  metricBlue: "#5B9DFF",
+  metricBlueSoft: "#7EB6FF",
+  warning: "#F5C400",
+  danger: "#FF5E72",
+  highlightCta: "#C77DFF",
+  highlightBorderStart: "#F3C4A2",
+  highlightBorderEnd: "#B44AFF",
+  border: "rgba(255, 255, 255, 0.08)",
+  borderSubtle: "rgba(255, 255, 255, 0.06)",
+  overlay: "rgba(0, 0, 0, 0.55)",
+  tabInactive: "#636366",
+  white: "#FFFFFF",
+} as const;
+
+export type ColorName = keyof typeof colors;

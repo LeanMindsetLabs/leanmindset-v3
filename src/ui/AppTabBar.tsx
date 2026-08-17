@@ -1,0 +1,211 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import { Keyboard, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useUiVariant } from "@/src/context/UiVariantContext";
+import { LeanMindsetIcon } from "@/src/ui/LeanMindsetBrand";
+import { colors } from "@/src/theme/colors";
+
+const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+  index: "home-outline",
+  today: "calendar-outline",
+  meals: "restaurant-outline",
+  coach: "chatbubble-ellipses-outline",
+  train: "barbell-outline",
+  progress: "stats-chart-outline",
+};
+
+const labels: Record<string, string> = {
+  index: "Home",
+  today: "Today",
+  meals: "Meals",
+  coach: "Coach",
+  train: "Train",
+  progress: "Progress",
+};
+
+const TAB_ICON_SIZE = 20;
+const TAB_LABEL_LINE = 10;
+const TAB_ICON_GAP = 3;
+/** Matches icon top → label baseline on other tabs (20 + 3 + 10). */
+const HOME_LOGO_SIZE = TAB_ICON_SIZE + TAB_ICON_GAP + TAB_LABEL_LINE;
+
+const orbIdleWeb = {
+  boxShadow: "0 0 10px 2px rgba(61, 123, 255, 0.28)",
+} as const;
+
+const orbActiveWeb = {
+  boxShadow: "0 0 16px 4px rgba(61, 123, 255, 0.5), 0 0 28px 8px rgba(61, 123, 255, 0.22)",
+} as const;
+
+function CoachBubbleIcon({ color, size = 26 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Circle cx="9" cy="12" r="1.15" fill={color} />
+      <Circle cx="15" cy="12" r="1.15" fill={color} />
+    </Svg>
+  );
+}
+
+type TabBarProps = {
+  state: { index: number; routes: { key: string; name: string }[] };
+  navigation: { navigate: (name: string) => void };
+};
+
+export default function AppTabBar({ state, navigation }: TabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { setPreviewRoute, composerOpen } = useUiVariant();
+  const activeName = state.routes[state.index]?.name ?? "index";
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    setPreviewRoute(activeName);
+  }, [activeName, setPreviewRoute]);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow", () => {
+      setKeyboardOpen(true);
+    });
+    const hide = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide", () => {
+      setKeyboardOpen(false);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  if (keyboardOpen || composerOpen) return null;
+
+  const homeInset = Platform.OS === "web" ? 34 : insets.bottom;
+
+  return (
+    <View style={[styles.bar, { paddingBottom: homeInset + 4 }]}>
+      {state.routes.map((route, index) => {
+        const active = state.index === index;
+        const isCoach = route.name === "coach";
+        const isHome = route.name === "index";
+        const tabColor = active ? colors.accentBlue : colors.tabInactive;
+        return (
+          <Pressable
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityLabel={labels[route.name] ?? route.name}
+            onPress={() => navigation.navigate(route.name)}
+            style={[styles.item, isCoach && styles.coachItem, isHome && styles.homeItem]}
+          >
+            {isCoach ? (
+              <View
+                style={[
+                  styles.orb,
+                  active && styles.orbActive,
+                  Platform.OS === "web" ? (active ? orbActiveWeb : orbIdleWeb) : null,
+                ]}
+              >
+                <CoachBubbleIcon color={active ? colors.metricBlueSoft : colors.accentBlue} />
+              </View>
+            ) : isHome ? (
+              <LeanMindsetIcon size={HOME_LOGO_SIZE} dimmed={!active} />
+            ) : (
+              <Ionicons name={icons[route.name] ?? "ellipse-outline"} size={TAB_ICON_SIZE} color={tabColor} />
+            )}
+            {!isHome ? (
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.label,
+                  active && styles.labelActive,
+                  isCoach && styles.coachLabel,
+                  isCoach && !active && styles.coachLabelIdle,
+                  isCoach && active && styles.coachLabelActive,
+                ]}
+              >
+                {labels[route.name] ?? route.name}
+              </Text>
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  bar: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+    paddingTop: 6,
+    paddingHorizontal: 4,
+    minHeight: 52,
+    overflow: "visible",
+    zIndex: 2,
+  },
+  item: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 3,
+    minHeight: 44,
+    padding: 0,
+    outlineWidth: 0,
+  },
+  coachItem: {
+    gap: 5,
+    zIndex: 3,
+    overflow: "visible",
+  },
+  homeItem: {
+    gap: 0,
+    justifyContent: "flex-end",
+  },
+  label: {
+    fontSize: 8,
+    lineHeight: 10,
+    fontWeight: "500",
+    color: colors.tabInactive,
+    letterSpacing: -0.15,
+  },
+  labelActive: { color: colors.accentBlue },
+  coachLabel: {
+    fontSize: 10.5,
+    lineHeight: 11,
+    fontWeight: "600",
+    letterSpacing: 0,
+  },
+  coachLabelIdle: { color: colors.tabInactive },
+  coachLabelActive: { color: colors.accentBlue },
+  orb: {
+    width: 52,
+    height: 52,
+    marginTop: -28,
+    borderRadius: 26,
+    backgroundColor: "rgba(34, 37, 41, 0.92)",
+    borderWidth: 2.5,
+    borderColor: colors.accentBlue,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.accentBlue,
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
+  orbActive: {
+    borderColor: colors.metricBlue,
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+});

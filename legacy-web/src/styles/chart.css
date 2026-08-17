@@ -1,0 +1,31 @@
+.trend-chart {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 8px 6px 6px;
+  height: 124px;
+  display: flex;
+  flex-direction: column;
+}
+
+.trend-chart-title {
+  font-size: 12px;
+  line-height: 15px;
+  font-weight: 600;
+  color: #eef2f7;
+  padding-left: 6px;
+  margin-bottom: 1px;
+}
+
+.trend-chart-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.trend-chart-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+}
