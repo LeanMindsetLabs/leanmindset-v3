@@ -1,6 +1,7 @@
 node_modules
 .expo
 dist
+.vercel
 .DS_Store
 *.local
 .vite
