@@ -1,15 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  type TextInput,
 } from "react-native";
+import AppTextInput from "@/src/ui/AppTextInput";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppScreen from "@/src/layout/AppScreen";
 import { useUiVariant } from "@/src/context/UiVariantContext";
 import {
@@ -20,9 +22,9 @@ import {
   quickActions,
   replyDelay,
   type CoachMessage,
-  type ReflectionId,
 } from "@/src/services/coachService";
 import { colors } from "@/src/theme/colors";
+import { layout } from "@/src/theme/layout";
 import AvatarBadge from "@/src/ui/AvatarBadge";
 import InsightCard from "@/src/ui/InsightCard";
 import LogFab from "@/src/ui/LogFab";
@@ -36,26 +38,23 @@ const actionIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
   battery: "battery-half-outline",
 };
 
-const reflections: { id: ReflectionId; label: string; color: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: "stress", label: "Stress", color: "#5B9DFF", icon: "flash-outline" },
-  { id: "time", label: "Time", color: "#19E68C", icon: "time-outline" },
-  { id: "hunger", label: "Hunger", color: "#F5B83D", icon: "nutrition-outline" },
-  { id: "social", label: "Social event", color: "#9A6CFF", icon: "people-outline" },
-  { id: "cravings", label: "Cravings", color: "#FF5E72", icon: "ice-cream-outline" },
-];
-
 const glassWeb = {
   backdropFilter: "blur(28px)",
   WebkitBackdropFilter: "blur(28px)",
 } as const;
 
+const inputWeb = {
+  borderWidth: 0,
+} as const;
+
 export default function CoachChat() {
   const { setComposerOpen, setLogMenuOpen } = useUiVariant();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<CoachMessage[]>(initialMessages);
   const [typing, setTyping] = useState(false);
-  const [reflection, setReflection] = useState<ReflectionId | null>(null);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const inputRef = useRef<TextInput>(null);
   const endRef = useRef<ScrollView>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,6 +67,48 @@ export default function CoachChat() {
       setComposerOpen(false);
     };
   }, [setComposerOpen]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const show = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardInset(event.endCoordinates.height);
+      setTimeout(() => endRef.current?.scrollToEnd({ animated: true }), 50);
+    });
+    const hide = Keyboard.addListener(hideEvent, () => setKeyboardInset(0));
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const sync = () => {
+      const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      setKeyboardInset(inset);
+    };
+
+    sync();
+    viewport.addEventListener("resize", sync);
+    viewport.addEventListener("scroll", sync);
+    return () => {
+      viewport.removeEventListener("resize", sync);
+      viewport.removeEventListener("scroll", sync);
+    };
+  }, []);
+
+  const composerPadBottom =
+    keyboardInset > 0
+      ? Math.max(8, keyboardInset - insets.bottom)
+      : composing
+        ? insets.bottom + 8
+        : layout.tabBarContentInset;
 
   function enterChat() {
     if (blurTimer.current) clearTimeout(blurTimer.current);
@@ -87,7 +128,7 @@ export default function CoachChat() {
     setMessages((current) => [...current, userMessage]);
     setTyping(true);
     setDraft("");
-    const reply = getCoachReply(trimmed, reflection);
+    const reply = getCoachReply(trimmed);
     timerRef.current = setTimeout(() => {
       setMessages((current) => [
         ...current.map((msg) => (msg.id === userMessage.id ? { ...msg, status: "read" as const } : msg)),
@@ -99,7 +140,7 @@ export default function CoachChat() {
 
   return (
     <AppScreen edges={["top"]} padded={false}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <View style={styles.flex}>
         {!composing ? (
           <View style={styles.top}>
             <View style={styles.header}>
@@ -156,38 +197,14 @@ export default function CoachChat() {
                 </Pressable>
               ))}
             </ScrollView>
-            <View style={styles.reflect}>
-              <View style={styles.reflectHead}>
-                <View>
-                  <Text style={styles.reflectTitle}>60-second reflection</Text>
-                  <Text style={styles.reflectSub}>How are you feeling right now?</Text>
-                </View>
-                <Ionicons name="information-circle-outline" size={14} color="#8495AD" />
-              </View>
-              <View style={styles.reflectRow}>
-                {reflections.map((opt) => {
-                  const selected = reflection === opt.id;
-                  return (
-                    <Pressable
-                      key={opt.id}
-                      style={[styles.reflectOpt, selected && styles.reflectSelected]}
-                      onPress={() => setReflection((current) => (current === opt.id ? null : opt.id))}
-                    >
-                      <Ionicons name={opt.icon} size={18} color={opt.color} />
-                      <Text style={[styles.reflectLabel, selected && styles.reflectLabelOn]}>{opt.label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
           </View>
         ) : null}
 
-        <View style={[styles.composerDock, composing && styles.composerDockActive]}>
+        <View style={[styles.composerDock, { paddingBottom: composerPadBottom }]}>
           <View style={[styles.composer, Platform.OS === "web" ? glassWeb : null]}>
-            <TextInput
+            <AppTextInput
               ref={inputRef}
-              style={styles.input}
+              style={[styles.input, Platform.OS === "web" ? inputWeb : null]}
               value={draft}
               onChangeText={setDraft}
               onFocus={enterChat}
@@ -214,7 +231,7 @@ export default function CoachChat() {
           </View>
           {!composing ? <LogFab onPress={() => setLogMenuOpen(true)} /> : null}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </AppScreen>
   );
 }
@@ -305,43 +322,13 @@ const styles = StyleSheet.create({
     borderRadius: 11,
   },
   quickLabel: { fontSize: 10, lineHeight: 13, fontWeight: "500", color: "#E8EEF6" },
-  reflect: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    paddingBottom: 8,
-  },
-  reflectHead: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8, paddingHorizontal: 2 },
-  reflectTitle: { fontSize: 13, fontWeight: "600", color: "#F5F7FB" },
-  reflectSub: { marginTop: 2, fontSize: 10, color: "#8B9BB0" },
-  reflectRow: { flexDirection: "row", gap: 5 },
-  reflectOpt: {
-    flex: 1,
-    minHeight: 62,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: colors.surfaceElevated,
-  },
-  reflectSelected: { backgroundColor: "rgba(255,255,255,0.06)" },
-  reflectLabel: { fontSize: 8.5, fontWeight: "500", color: "#B7C3D4", textAlign: "center" },
-  reflectLabelOn: { color: "#DCE6F5" },
   composerDock: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingHorizontal: 12,
     paddingTop: 8,
-    paddingBottom: 8,
     flexShrink: 0,
-  },
-  composerDockActive: {
-    paddingBottom: 10,
   },
   composer: {
     flex: 1,
@@ -358,7 +345,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.22)",
   },
-  input: { flex: 1, height: 34, color: "#F5F7FB", fontSize: 11 },
+  input: {
+    flex: 1,
+    height: 34,
+    color: "#F5F7FB",
+    fontSize: 11,
+    backgroundColor: "transparent",
+    padding: 0,
+  },
   mic: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   send: {
     width: 36,

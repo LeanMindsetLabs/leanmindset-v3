@@ -14,7 +14,7 @@ const TRAIN_N = 8.4;
 export default function HomeHeroChart() {
   return (
     <View style={styles.dials}>
-      <Pressable style={styles.dial} onPress={() => router.push("/(tabs)/today")}>
+      <Pressable style={styles.dial} onPress={() => router.push("/(tabs)/progress")}>
         <DualRing size={104} progress={READY} fillColor="#F5C400">
           <Text style={styles.num}>{READY_N}</Text>
           <Text style={styles.denom}>/100</Text>

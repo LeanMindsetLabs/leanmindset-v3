@@ -7,6 +7,7 @@ import { router } from "expo-router";
 import { useProfile } from "@/src/hooks/useProfile";
 import { formatWeight, logout } from "@/src/services/profileService";
 import { colors } from "@/src/theme/colors";
+import { layout } from "@/src/theme/layout";
 import MetricRing from "@/src/ui/MetricRing";
 
 export default function ProgressScreen() {
@@ -77,7 +78,7 @@ function Row({ icon, label, value, onPress }: { icon: keyof typeof Ionicons.glyp
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24, gap: 16 },
+  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: layout.tabBarContentInset, gap: 16 },
   kicker: { fontSize: 11, letterSpacing: 1.6, color: "#8e8e93", fontWeight: "700" },
   identity: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#2c2c2e", alignItems: "center", justifyContent: "center" },

@@ -25,10 +25,10 @@ const labels: Record<string, string> = {
   progress: "Progress",
 };
 
-const TAB_ICON_SIZE = 20;
-const TAB_LABEL_LINE = 10;
+const TAB_ICON_SIZE = 24;
+const TAB_LABEL_LINE = 13.2;
 const TAB_ICON_GAP = 3;
-/** Matches icon top → label baseline on other tabs (20 + 3 + 10). */
+/** Matches icon top → label baseline on other tabs (24 + 3 + 13.2). */
 const HOME_LOGO_SIZE = TAB_ICON_SIZE + TAB_ICON_GAP + TAB_LABEL_LINE;
 
 const orbIdleWeb = {
@@ -60,6 +60,16 @@ type TabBarProps = {
   navigation: { navigate: (name: string) => void };
 };
 
+const tabWebFocus =
+  Platform.OS === "web"
+    ? ({
+        outlineWidth: 0,
+        outlineStyle: "none",
+        outlineColor: "transparent",
+        boxShadow: "none",
+      } as const)
+    : null;
+
 export default function AppTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const { setPreviewRoute, composerOpen } = useUiVariant();
@@ -90,6 +100,7 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
   return (
     <View style={[styles.bar, { paddingBottom: homeInset + 4 }]}>
       {state.routes.map((route, index) => {
+        if (route.name === "today") return null;
         const active = state.index === index;
         const isCoach = route.name === "coach";
         const isHome = route.name === "index";
@@ -100,7 +111,7 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
             accessibilityRole="button"
             accessibilityLabel={labels[route.name] ?? route.name}
             onPress={() => navigation.navigate(route.name)}
-            style={[styles.item, isCoach && styles.coachItem, isHome && styles.homeItem]}
+            style={[styles.item, isCoach && styles.coachItem, isHome && styles.homeItem, tabWebFocus]}
           >
             {isCoach ? (
               <View
@@ -113,20 +124,14 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
                 <CoachBubbleIcon color={active ? colors.metricBlueSoft : colors.accentBlue} />
               </View>
             ) : isHome ? (
-              <LeanMindsetIcon size={HOME_LOGO_SIZE} dimmed={!active} />
+              <LeanMindsetIcon size={HOME_LOGO_SIZE} textScale={1.15} dimmed={!active} />
             ) : (
               <Ionicons name={icons[route.name] ?? "ellipse-outline"} size={TAB_ICON_SIZE} color={tabColor} />
             )}
             {!isHome ? (
               <Text
                 numberOfLines={1}
-                style={[
-                  styles.label,
-                  active && styles.labelActive,
-                  isCoach && styles.coachLabel,
-                  isCoach && !active && styles.coachLabelIdle,
-                  isCoach && active && styles.coachLabelActive,
-                ]}
+                style={[styles.label, active && styles.labelActive]}
               >
                 {labels[route.name] ?? route.name}
               </Text>
@@ -171,21 +176,13 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   label: {
-    fontSize: 8,
-    lineHeight: 10,
-    fontWeight: "500",
-    color: colors.tabInactive,
-    letterSpacing: -0.15,
-  },
-  labelActive: { color: colors.accentBlue },
-  coachLabel: {
-    fontSize: 10.5,
-    lineHeight: 11,
+    fontSize: 12.6,
+    lineHeight: 13.2,
     fontWeight: "600",
+    color: colors.tabInactive,
     letterSpacing: 0,
   },
-  coachLabelIdle: { color: colors.tabInactive },
-  coachLabelActive: { color: colors.accentBlue },
+  labelActive: { color: colors.accentBlue },
   orb: {
     width: 52,
     height: 52,

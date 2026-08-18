@@ -11,20 +11,31 @@ type InsightCardProps = {
   title: string;
   body: string;
   cta?: string;
-  /** header = title row + right CTA. beside = CTA beside wrapped title (Meals). auto = measure first. */
-  ctaLayout?: "header" | "beside" | "auto";
+  /** header = title row + right CTA. beside = CTA beside wrapped title (Meals). auto = measure first. stack = title, body, then CTA. */
+  ctaLayout?: "header" | "beside" | "auto" | "stack";
+  /** Tighter padding (Meals classic protein card). */
+  compact?: boolean;
   onPress?: () => void;
 };
 
-export default function InsightCard({ title, body, cta, ctaLayout = "header", onPress }: InsightCardProps) {
+export default function InsightCard({
+  title,
+  body,
+  cta,
+  ctaLayout = "header",
+  compact = false,
+  onPress,
+}: InsightCardProps) {
   const [linesFull, setLinesFull] = useState(1);
   const [linesBeside, setLinesBeside] = useState(2);
   const [ctaWidth, setCtaWidth] = useState(96);
 
   const autoInline = linesFull > 1 || linesBeside === 1;
-  const inline = Boolean(cta) && (ctaLayout === "header" || ctaLayout === "beside" || autoInline);
-  const compact = inline && ctaLayout !== "header";
+  const inline =
+    Boolean(cta) && ctaLayout !== "stack" && (ctaLayout === "header" || ctaLayout === "beside" || autoInline);
+  const compactInline = inline && ctaLayout !== "header";
   const besideHead = ctaLayout === "beside" || ctaLayout === "auto";
+  const stackLayout = ctaLayout === "stack";
 
   const ctaLabel = cta ? (
     <Text style={[styles.cta, inline && styles.ctaInline]} maxFontSizeMultiplier={1.2}>
@@ -33,7 +44,7 @@ export default function InsightCard({ title, body, cta, ctaLayout = "header", on
   ) : null;
 
   const inner = (
-    <View style={[styles.inner, compact && styles.innerCompact]}>
+    <View style={[styles.inner, (compact || compactInline) && styles.innerCompact]}>
       {cta && ctaLayout === "auto" ? (
         <View pointerEvents="none" style={styles.measure}>
           <Text
@@ -68,7 +79,11 @@ export default function InsightCard({ title, body, cta, ctaLayout = "header", on
           {ctaLabel}
         </View>
       ) : (
-        <Text style={typography.heading3} maxFontSizeMultiplier={1.3}>
+        <Text
+          style={[typography.heading3, stackLayout && styles.stackTitle]}
+          maxFontSizeMultiplier={1.3}
+          numberOfLines={stackLayout ? 1 : undefined}
+        >
           {title}
         </Text>
       )}
@@ -140,6 +155,9 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     minWidth: 0,
+  },
+  stackTitle: {
+    width: "100%",
   },
   body: {
     width: "100%",

@@ -11,6 +11,7 @@ import WebPhonePreview from "@/src/layout/WebPhonePreview";
 import LogMenuHost from "@/src/ui/LogMenuHost";
 import { rehydrateProfile } from "@/src/services/profileService";
 import { rehydrateWeek } from "@/src/services/weekReviewService";
+import { installWebInputFocusReset } from "@/src/lib/webInputFocus";
 import { colors } from "@/src/theme/colors";
 
 const webInsets = {
@@ -34,6 +35,7 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    installWebInputFocusReset();
     void hydrateStorage()
       .then(() => {
         rehydrateProfile();

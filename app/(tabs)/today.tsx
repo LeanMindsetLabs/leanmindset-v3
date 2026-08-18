@@ -1,1 +1,5 @@
-export { default } from "@/src/screens/TodayScreen";
+import { Redirect } from "expo-router";
+
+export default function TodayRedirect() {
+  return <Redirect href="/(tabs)" />;
+}

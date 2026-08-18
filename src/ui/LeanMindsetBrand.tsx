@@ -26,11 +26,12 @@ type IconProps = {
   size?: number;
   style?: ViewStyle;
   dimmed?: boolean;
+  textScale?: number;
 };
 
-export function LeanMindsetIcon({ size = 24, style, dimmed = false }: IconProps) {
+export function LeanMindsetIcon({ size = 24, style, dimmed = false, textScale = 1 }: IconProps) {
   const radius = Math.round(size * 0.23);
-  const fontSize = Math.round(size * 0.42);
+  const fontSize = Math.round(size * 0.42 * textScale);
   const y = Math.round(size * 0.66);
 
   return (

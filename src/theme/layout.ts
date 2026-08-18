@@ -7,6 +7,8 @@ export const layout = {
   compactWidth: 380,
   largeWidth: 428,
   compactHeight: 700,
+  /** Gap from last content to tab bar top border (matches Meals grocery CTA). */
+  tabBarContentInset: 10,
 } as const;
 
 export type ViewportClass = "compact" | "standard" | "large";

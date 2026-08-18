@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { ScrollView, StyleSheet, type ViewStyle } from "react-native";
+import { layout } from "@/src/theme/layout";
 import { spacing } from "@/src/theme/spacing";
 import AppScreen from "./AppScreen";
 
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xl,
+    paddingBottom: layout.tabBarContentInset,
     gap: spacing.lg,
   },
 });

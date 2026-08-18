@@ -19,8 +19,7 @@ const glassWeb = {
 } as const;
 
 export default function LogMenuHost() {
-  const { composerOpen, logMenuOpen, setLogMenuOpen, setMealsVariant, setCoachVariant, previewRoute } =
-    useUiVariant();
+  const { composerOpen, logMenuOpen, setLogMenuOpen, setCoachVariant, previewRoute } = useUiVariant();
 
   function close() {
     setLogMenuOpen(false);
@@ -29,7 +28,6 @@ export default function LogMenuHost() {
   function pick(id: "meal" | "workout" | "checkin") {
     close();
     if (id === "meal") {
-      setMealsVariant("log");
       router.push("/(tabs)/meals");
       return;
     }

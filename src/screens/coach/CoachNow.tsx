@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import AppTextInput from "@/src/ui/AppTextInput";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   createAssistantMessage,
@@ -10,6 +11,7 @@ import {
   type CoachMessage,
 } from "@/src/services/coachService";
 import { colors } from "@/src/theme/colors";
+import { layout } from "@/src/theme/layout";
 import InsightCard from "@/src/ui/InsightCard";
 
 /** Current simplified Expo coach layout, kept as the Now toggle. */
@@ -50,7 +52,7 @@ export default function CoachNow() {
         </View>
       </ScrollView>
       <View style={styles.composer}>
-        <TextInput
+        <AppTextInput
           value={draft}
           onChangeText={setDraft}
           placeholder="Message"
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   kicker: { fontSize: 11, letterSpacing: 1.6, color: "#8e8e93", fontWeight: "700" },
   title: { fontSize: 24, fontWeight: "700", color: colors.white },
-  thread: { gap: 10, paddingBottom: 16 },
+  thread: { gap: 10, paddingBottom: layout.tabBarContentInset },
   bubble: { maxWidth: "86%", borderRadius: 16, padding: 12 },
   assistant: { alignSelf: "flex-start", backgroundColor: "#222529" },
   user: { alignSelf: "flex-end", backgroundColor: "#3d7bff" },

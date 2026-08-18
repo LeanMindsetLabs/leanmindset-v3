@@ -1,3 +1,5 @@
+import type { MealLogId } from "./mealsLogService";
+
 export type Macro = {
   label: "Protein" | "Fat" | "Carbs";
   consumed: number;
@@ -89,6 +91,142 @@ export const dinnerIdeas: MealRecommendation[] = [
     ingredients: ["Tofu", "Broccoli", "Bell peppers", "Rice"],
   },
 ];
+
+export type MealSlot = "breakfast" | "lunch" | "snack" | "dinner";
+
+const breakfastIdeas: MealRecommendation[] = [
+  {
+    id: "oatmeal-berries",
+    name: "Oatmeal + berries",
+    kcal: 340,
+    protein: 14,
+    image: "/meals/greek-yogurt-berries.png",
+    tags: ["Breakfast", "Fiber"],
+    ingredients: ["Rolled oats", "Mixed berries", "Honey", "Almond milk"],
+  },
+  {
+    id: "egg-scramble",
+    name: "Egg white scramble",
+    kcal: 280,
+    protein: 32,
+    image: "/meals/chicken-vegetables.png",
+    tags: ["Breakfast", "High protein"],
+    ingredients: ["Egg whites", "Spinach", "Bell peppers", "Olive oil"],
+  },
+  {
+    id: "yogurt-parfait",
+    name: "Greek yogurt parfait",
+    kcal: 290,
+    protein: 24,
+    image: "/meals/greek-yogurt-berries.png",
+    tags: ["Breakfast", "Quick"],
+    ingredients: ["Greek yogurt", "Granola", "Berries", "Chia seeds"],
+  },
+];
+
+const lunchIdeas: MealRecommendation[] = [
+  {
+    id: "chicken-rice-bowl",
+    name: "Chicken rice bowl",
+    kcal: 490,
+    protein: 38,
+    image: "/meals/chicken-vegetables.png",
+    tags: ["Lunch", "High protein"],
+    ingredients: ["Chicken breast", "Brown rice", "Broccoli", "Olive oil"],
+  },
+  {
+    id: "tofu-bowl",
+    name: "Tofu power bowl",
+    kcal: 450,
+    protein: 26,
+    image: "/meals/tofu-stir-fry.png",
+    tags: ["Lunch", "Plant"],
+    ingredients: ["Tofu", "Quinoa", "Mixed vegetables", "Tahini"],
+  },
+  {
+    id: "turkey-salad",
+    name: "Turkey salad plate",
+    kcal: 380,
+    protein: 34,
+    image: "/meals/chicken-vegetables.png",
+    tags: ["Lunch", "Lean"],
+    ingredients: ["Turkey breast", "Greens", "Tomatoes", "Olive oil"],
+  },
+];
+
+const snackIdeas: MealRecommendation[] = [
+  {
+    id: "yogurt-berries",
+    name: "Greek yogurt + berries",
+    kcal: 310,
+    protein: 28,
+    image: "/meals/greek-yogurt-berries.png",
+    tags: ["Snack", "High protein"],
+    ingredients: ["Greek yogurt", "Blueberries", "Strawberries", "Granola"],
+  },
+  {
+    id: "apple-almonds",
+    name: "Apple + almonds",
+    kcal: 220,
+    protein: 6,
+    image: "/meals/greek-yogurt-berries.png",
+    tags: ["Snack", "Quick"],
+    ingredients: ["Apple", "Almonds", "Cinnamon"],
+  },
+  {
+    id: "protein-shake",
+    name: "Protein shake",
+    kcal: 180,
+    protein: 24,
+    image: "/meals/tofu-stir-fry.png",
+    tags: ["Snack", "High protein"],
+    ingredients: ["Protein powder", "Almond milk", "Banana"],
+  },
+];
+
+export const mealIdeasBySlot: Record<MealSlot, MealRecommendation[]> = {
+  breakfast: breakfastIdeas,
+  lunch: lunchIdeas,
+  snack: snackIdeas,
+  dinner: dinnerIdeas,
+};
+
+export function mealSlotLabel(slot: MealSlot) {
+  return slot.charAt(0).toUpperCase() + slot.slice(1);
+}
+
+export function mealSlotFromLogId(id: string): MealSlot {
+  if (id === "breakfast") return "breakfast";
+  if (id === "lunch") return "lunch";
+  if (id === "dinner") return "dinner";
+  return "snack";
+}
+
+export function mealSlotByTime(date = new Date()): MealSlot {
+  const hour = date.getHours();
+  if (hour < 10) return "breakfast";
+  if (hour < 12) return "snack";
+  if (hour < 15) return "lunch";
+  if (hour < 17) return "snack";
+  if (hour < 21) return "dinner";
+  return "snack";
+}
+
+export function defaultMealLogIdByTime(date = new Date()): MealLogId {
+  const slot = mealSlotByTime(date);
+  if (slot === "breakfast") return "breakfast";
+  if (slot === "lunch") return "lunch";
+  if (slot === "dinner") return "dinner";
+  return date.getHours() < 17 ? "snack1" : "snack2";
+}
+
+export function getMealIdeasForSlot(slot: MealSlot) {
+  return mealIdeasBySlot[slot];
+}
+
+export function mealIdeasHeading(slot: MealSlot) {
+  return `${mealSlotLabel(slot)} ideas for you`;
+}
 
 export function percent(consumed: number, target: number) {
   if (target <= 0) return 0;

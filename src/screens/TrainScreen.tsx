@@ -8,6 +8,7 @@ import { useWorkoutRuntime } from "@/src/hooks/useWorkoutRuntime";
 import { trainPhoto } from "@/src/lib/media";
 import { markWorkoutDone, startSession } from "@/src/services/workoutSessionService";
 import { colors } from "@/src/theme/colors";
+import { layout } from "@/src/theme/layout";
 import BlueCta from "@/src/ui/BlueCta";
 import InsightCard from "@/src/ui/InsightCard";
 import MetricRing from "@/src/ui/MetricRing";
@@ -109,7 +110,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24, gap: 12 },
+  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: layout.tabBarContentInset, gap: 12 },
   toggleBar: { alignItems: "flex-end" },
   hero: { alignItems: "center", marginVertical: 8 },
   cap: { letterSpacing: 2, color: "#8e8e93", fontSize: 11, fontWeight: "700" },

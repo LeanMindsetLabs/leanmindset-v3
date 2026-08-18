@@ -1,14 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type ReactNode, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import AppTextInput from "@/src/ui/AppTextInput";
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop } from "react-native-svg";
+import { useMealsLog } from "@/src/context/MealsLogContext";
 import AppScreen from "@/src/layout/AppScreen";
+import type { MealLogId } from "@/src/services/mealsLogService";
+import { nextUnloggedMeal } from "@/src/services/mealsLogService";
 import {
   addLoggedMeal,
+  defaultMealLogIdByTime,
   defaultNutrition,
-  dinnerIdeas,
   formatKcal,
+  getMealIdeasForSlot,
   groceryItems as grocerySeed,
+  mealIdeasHeading,
+  mealSlotFromLogId,
   parseMealDescription,
   percent,
   proteinShort,
@@ -17,8 +24,10 @@ import {
   type Nutrition,
 } from "@/src/services/mealsService";
 import { colors } from "@/src/theme/colors";
+import { layout } from "@/src/theme/layout";
 import AvatarBadge from "@/src/ui/AvatarBadge";
 import InsightCard from "@/src/ui/InsightCard";
+import LogMealSheet from "@/src/ui/LogMealSheet";
 import MealThumb from "@/src/ui/MealThumb";
 
 type MealsView = "main" | "describe" | "photo" | "detail" | "all" | "grocery";
@@ -28,7 +37,10 @@ type Props = {
 };
 
 export default function MealsClassic({ onAskCoach }: Props) {
+  const { meals, saveMealLog } = useMealsLog();
   const [view, setView] = useState<MealsView>("main");
+  const [logMealId, setLogMealId] = useState<MealLogId | null>(null);
+  const [focusedMealId, setFocusedMealId] = useState<MealLogId | null>(null);
   const [nutrition, setNutrition] = useState<Nutrition>(defaultNutrition);
   const [description, setDescription] = useState("");
   const [selectedMeal, setSelectedMeal] = useState<MealRecommendation | null>(null);
@@ -45,6 +57,18 @@ export default function MealsClassic({ onAskCoach }: Props) {
   const groupedAisles = aisleOrder.filter((aisle) => grouped[aisle]?.length);
   const short = proteinShort(nutrition);
   const kcalPct = percent(nutrition.kcalLogged, nutrition.kcalTarget);
+  const loggedCount = meals.filter((m) => m.logged).length;
+  const activeMeal = meals.find((m) => m.id === logMealId) ?? null;
+  const nextUnlogged = useMemo(() => nextUnloggedMeal(meals), [meals]);
+  const ideaMealId = focusedMealId ?? nextUnlogged?.id ?? defaultMealLogIdByTime();
+  const ideaSlot = mealSlotFromLogId(ideaMealId);
+  const mealIdeas = getMealIdeasForSlot(ideaSlot);
+  const ideasHeading = mealIdeasHeading(ideaSlot);
+
+  function openMealCard(id: MealLogId) {
+    setFocusedMealId(id);
+    setLogMealId(id);
+  }
 
   function logMeal(meal: { kcal: number; protein: number; fat: number; carbs: number }) {
     setNutrition((current) => addLoggedMeal(current, meal));
@@ -55,7 +79,7 @@ export default function MealsClassic({ onAskCoach }: Props) {
   if (view === "describe") {
     return (
       <Subpage title="Describe a meal" onBack={() => setView("main")}>
-        <TextInput
+        <AppTextInput
           value={description}
           onChangeText={setDescription}
           placeholder="e.g. grilled chicken, rice, and broccoli"
@@ -118,8 +142,8 @@ export default function MealsClassic({ onAskCoach }: Props) {
 
   if (view === "all") {
     return (
-      <Subpage title="Dinner ideas" onBack={() => setView("main")}>
-        {dinnerIdeas.map((meal) => (
+      <Subpage title={ideasHeading.replace(" for you", "")} onBack={() => setView("main")}>
+        {mealIdeas.map((meal) => (
           <Pressable
             key={meal.id}
             style={styles.listItem}
@@ -178,119 +202,186 @@ export default function MealsClassic({ onAskCoach }: Props) {
   return (
     <AppScreen edges={["top"]}>
       <View style={styles.page}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Meals</Text>
-            <Text style={styles.subtitle}>Eat with clarity, not guesswork</Text>
+        <View style={styles.pageSpacer} />
+        <View style={styles.pageContent}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.title}>Meals</Text>
+              <Text style={styles.subtitle}>Eat with clarity, not guesswork</Text>
+            </View>
+            <AvatarBadge />
           </View>
-          <AvatarBadge />
-        </View>
 
-        <View style={styles.actions}>
-          <Pressable style={styles.action} onPress={() => setView("photo")}>
-            <View style={styles.actionIcon}>
-              <Ionicons name="camera-outline" size={16} color="#7EABFF" />
-            </View>
-            <View style={styles.flex}>
-              <Text style={styles.actionTitle}>Photo log meal</Text>
-              <Text style={styles.actionSub}>Snap a photo to log</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color="#6D7B91" />
-          </Pressable>
-          <Pressable style={styles.action} onPress={() => setView("describe")}>
-            <View style={styles.actionIcon}>
-              <Ionicons name="create-outline" size={16} color="#7EABFF" />
-            </View>
-            <View style={styles.flex}>
-              <Text style={styles.actionTitle}>Describe a meal</Text>
-              <Text style={styles.actionSub}>Type what you ate</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color="#6D7B91" />
-          </Pressable>
-        </View>
+          <NutritionCard nutrition={nutrition} kcalPct={kcalPct} compact />
+          <ProteinInsight short={short} onAskCoach={onAskCoach} />
 
-        <View style={styles.nutrition}>
-          <View style={styles.nutritionHead}>
-            <Text style={styles.nutritionH}>Today's nutrition</Text>
-            <Ionicons name="information-circle-outline" size={14} color="#8495AD" />
-          </View>
-          <View style={styles.nutritionBody}>
-            <KcalRing logged={nutrition.kcalLogged} target={nutrition.kcalTarget} />
-            <View style={styles.flex}>
-              <View style={styles.targetRow}>
-                <Text style={styles.target}>Target {formatKcal(nutrition.kcalTarget)} kcal</Text>
-                <Text style={styles.pct}>{kcalPct}%</Text>
-              </View>
-              <View style={styles.dots}>
-                {Array.from({ length: 22 }).map((_, i) => (
-                  <View key={i} style={[styles.dot, i / 22 <= kcalPct / 100 && styles.dotOn]} />
-                ))}
-              </View>
-              {[nutrition.protein, nutrition.fat, nutrition.carbs].map((macro) => {
-                const p = percent(macro.consumed, macro.target);
+          <View style={styles.mealsSection}>
+            <View style={styles.sectionHead}>
+              <Text style={styles.sectionTitle}>Today's meals</Text>
+              <Text style={styles.tag}>
+                {loggedCount}/{meals.length} logged
+              </Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.mealRow}
+              contentContainerStyle={styles.hscroll}
+            >
+              {meals.map((m) => {
+                const isUnlogged = !m.logged;
                 return (
-                  <View key={macro.label} style={styles.macro}>
-                    <View style={styles.macroTop}>
-                      <Text style={styles.macroLabel}>{macro.label}</Text>
-                      <Text style={styles.macroVal}>
-                        {macro.consumed} / {macro.target}g
-                      </Text>
-                      <Text style={styles.macroPct}>{p}%</Text>
+                  <Pressable
+                    key={m.id}
+                    style={[styles.mealCard, m.logged && styles.mealDone, isUnlogged && styles.mealUnloggedBar]}
+                    onPress={() => openMealCard(m.id)}
+                  >
+                    {isUnlogged ? <View style={styles.mealUnloggedDashRing} pointerEvents="none" /> : null}
+                    <View style={styles.mealHead}>
+                      <View style={[styles.mealCheck, m.logged ? null : styles.mealUnloggedCheck]}>
+                        {m.logged ? <Text style={styles.mealCheckMark}>✓</Text> : null}
+                      </View>
+                      <View style={styles.mealText}>
+                        <Text style={styles.mealName}>{m.name}</Text>
+                        <Text style={styles.mealDesc}>{m.desc}</Text>
+                      </View>
                     </View>
-                    <View style={styles.macroTrack}>
-                      <View style={[styles.macroFill, { width: `${Math.min(p, 100)}%` as `${number}%`, backgroundColor: macro.color }]} />
+                    <View style={styles.mealFoot}>
+                      <Text style={styles.mealTime}>{m.time}</Text>
+                      <View style={[styles.pill, m.logged ? styles.pillEdit : styles.pillLog]}>
+                        <Text style={[styles.pillText, m.logged ? styles.pillEditText : styles.pillLogText]}>
+                          {m.logged ? "Edit" : "Log"}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
+                  </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
+          </View>
+
+          <View style={styles.carouselHead}>
+            <Text style={styles.carouselTitle}>{ideasHeading}</Text>
+            <Pressable onPress={() => setView("all")}>
+              <Text style={styles.viewAll}>View all →</Text>
+            </Pressable>
+          </View>
+          <View style={styles.carousel}>
+            {mealIdeas.map((meal) => (
+              <Pressable
+                key={meal.id}
+                style={styles.rec}
+                onPress={() => {
+                  setSelectedMeal(meal);
+                  setView("detail");
+                }}
+              >
+                <MealThumb meal={meal} height={70} />
+                <View style={styles.recBody}>
+                  <Text style={styles.recName} numberOfLines={2}>
+                    {meal.name}
+                  </Text>
+                  <Text style={styles.recMeta}>{meal.kcal} kcal</Text>
+                  <Text style={styles.recMeta}>{meal.protein}g protein</Text>
+                </View>
+              </Pressable>
+            ))}
           </View>
         </View>
 
-        <View style={{ marginTop: 10 }}>
-          <InsightCard
-            title={`You're ${short}g short on protein today.`}
-            body="Best next step: choose a high-protein dinner."
-            cta="Ask coach"
-            ctaLayout="beside"
-            onPress={() => onAskCoach(`I'm ${short}g short on protein today. What high-protein dinner should I eat?`)}
-          />
-        </View>
-
-        <View style={styles.carouselHead}>
-          <Text style={styles.carouselTitle}>Dinner ideas for you</Text>
-          <Pressable onPress={() => setView("all")}>
-            <Text style={styles.viewAll}>View all →</Text>
+        <View style={styles.groceryCtaWrap}>
+          <Pressable style={styles.groceryCta} onPress={() => setView("grocery")}>
+            <Text style={styles.outlineText}>Grocery list →</Text>
           </Pressable>
         </View>
-        <View style={styles.carousel}>
-          {dinnerIdeas.map((meal) => (
-            <Pressable
-              key={meal.id}
-              style={styles.rec}
-              onPress={() => {
-                setSelectedMeal(meal);
-                setView("detail");
-              }}
-            >
-              <MealThumb meal={meal} height={70} />
-              <View style={styles.recBody}>
-                <Text style={styles.recName} numberOfLines={2}>
-                  {meal.name}
-                </Text>
-                <Text style={styles.recMeta}>{meal.kcal} kcal</Text>
-                <Text style={styles.recMeta}>{meal.protein}g protein</Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-
-        <Pressable style={styles.groceryCta} onPress={() => setView("grocery")}>
-          <Text style={styles.groceryCtaText}>Generate full grocery list</Text>
-          <Ionicons name="arrow-forward" size={16} color={colors.white} />
-        </Pressable>
       </View>
+
+      {activeMeal ? (
+        <LogMealSheet
+          mealName={activeMeal.name}
+          mealTime={activeMeal.time}
+          onClose={() => setLogMealId(null)}
+          onSave={(summary) => {
+            saveMealLog(activeMeal.id, summary);
+            setLogMealId(null);
+          }}
+        />
+      ) : null}
     </AppScreen>
+  );
+}
+
+function ProteinInsight({
+  short,
+  onAskCoach,
+}: {
+  short: number;
+  onAskCoach: (message: string) => void;
+}) {
+  return (
+    <View style={styles.proteinInsight}>
+      <InsightCard
+        title={`You're ${short}g short on protein.`}
+        body="Best next step: choose a high-protein dinner."
+        cta="Ask Coach"
+        ctaLayout="header"
+        onPress={() => onAskCoach(`I'm ${short}g short on protein today. What high-protein dinner should I eat?`)}
+      />
+    </View>
+  );
+}
+function NutritionCard({
+  nutrition,
+  kcalPct,
+  compact = false,
+}: {
+  nutrition: Nutrition;
+  kcalPct: number;
+  compact?: boolean;
+}) {
+  return (
+    <View style={[styles.nutrition, compact && styles.nutritionCompact]}>
+      <View style={[styles.nutritionHead, compact && styles.nutritionHeadCompact]}>
+        <Text style={styles.nutritionH}>Today's nutrition</Text>
+        <Ionicons name="information-circle-outline" size={14} color="#8495AD" />
+      </View>
+      <View style={[styles.nutritionBody, compact && styles.nutritionBodyCompact]}>
+        <KcalRing logged={nutrition.kcalLogged} target={nutrition.kcalTarget} size={compact ? 96 : 108} />
+        <View style={styles.flex}>
+          <View style={styles.targetRow}>
+            <Text style={styles.target}>Target {formatKcal(nutrition.kcalTarget)} kcal</Text>
+            <Text style={[styles.pct, compact && styles.pctCompact]}>{kcalPct}%</Text>
+          </View>
+          <View style={[styles.dots, compact && styles.dotsCompact]}>
+            {Array.from({ length: 22 }).map((_, i) => (
+              <View key={i} style={[styles.dot, i / 22 <= kcalPct / 100 && styles.dotOn]} />
+            ))}
+          </View>
+          {[nutrition.protein, nutrition.fat, nutrition.carbs].map((macro) => {
+            const p = percent(macro.consumed, macro.target);
+            return (
+              <View key={macro.label} style={[styles.macro, compact && styles.macroCompact]}>
+                <View style={styles.macroTop}>
+                  <Text style={styles.macroLabel}>{macro.label}</Text>
+                  <Text style={styles.macroVal}>
+                    {macro.consumed} / {macro.target}g
+                  </Text>
+                  <Text style={styles.macroPct}>{p}%</Text>
+                </View>
+                <View style={styles.macroTrack}>
+                  <View
+                    style={[
+                      styles.macroFill,
+                      { width: `${Math.min(p, 100)}%` as `${number}%`, backgroundColor: macro.color },
+                    ]}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -310,9 +401,8 @@ function Subpage({ title, onBack, children }: { title: string; onBack: () => voi
   );
 }
 
-function KcalRing({ logged, target }: { logged: number; target: number }) {
-  const size = 108;
-  const stroke = 9;
+function KcalRing({ logged, target, size = 108 }: { logged: number; target: number; size?: number }) {
+  const stroke = size >= 108 ? 9 : 8;
   const radius = (size - stroke) / 2;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
@@ -322,9 +412,10 @@ function KcalRing({ logged, target }: { logged: number; target: number }) {
   const endRad = (endDeg * Math.PI) / 180;
   const hx = center + radius * Math.cos(endRad);
   const hy = center + radius * Math.sin(endRad);
+  const compact = size < 108;
 
   return (
-    <View style={styles.ringWrap}>
+    <View style={[styles.ringWrap, { width: size, height: size }]}>
       <Svg width={size} height={size}>
         <Defs>
           <LinearGradient id="kcalRing" x1="50%" y1="0%" x2="90%" y2="80%">
@@ -353,8 +444,8 @@ function KcalRing({ logged, target }: { logged: number; target: number }) {
         <Circle cx={center} cy={center - radius} r={3.4} fill="#F4F8FF" />
       </Svg>
       <View style={styles.ringCenter} pointerEvents="none">
-        <Text style={styles.ringNum}>{formatKcal(logged)}</Text>
-        <Text style={styles.ringKcal}>kcal</Text>
+        <Text style={[styles.ringNum, compact && styles.ringNumCompact]}>{formatKcal(logged)}</Text>
+        <Text style={[styles.ringKcal, compact && styles.ringKcalCompact]}>kcal</Text>
         <Text style={styles.ringLogged}>logged</Text>
       </View>
     </View>
@@ -362,35 +453,22 @@ function KcalRing({ logged, target }: { logged: number; target: number }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: 18 },
-  page: { flex: 1 },
+  page: {
+    flex: 1,
+    minHeight: 0,
+    paddingBottom: layout.tabBarContentInset,
+    overflow: "hidden",
+  },
+  pageSpacer: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
+  pageContent: { flexShrink: 0 },
   flex: { flex: 1, minWidth: 0 },
+  mealsSection: { flexShrink: 0 },
+  mealRow: { height: 96 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   title: { fontSize: 26, lineHeight: 31, fontWeight: "700", letterSpacing: -0.4, color: "#F5F7FB" },
   subtitle: { marginTop: 1, fontSize: 11, lineHeight: 15, color: "#8E8E93" },
-  actions: { marginTop: 14, flexDirection: "row", gap: 8 },
-  action: {
-    flex: 1,
-    height: 70,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 10,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-  },
-  actionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1.4,
-    borderColor: "rgba(75,132,255,0.55)",
-  },
-  actionTitle: { fontSize: 13, lineHeight: 16, fontWeight: "700", color: "#F5F7FB" },
-  actionSub: { fontSize: 10, lineHeight: 13, color: "#8E8E93" },
+  outlineText: { color: colors.metricBlueSoft, fontSize: 12.5, fontWeight: "700" },
+  proteinInsight: { marginTop: 10 },
   nutrition: {
     marginTop: 12,
     paddingHorizontal: 12,
@@ -399,27 +477,97 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: colors.surface,
   },
+  nutritionCompact: { marginTop: 10, paddingTop: 8, paddingBottom: 10 },
   nutritionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  nutritionHeadCompact: { marginBottom: 6 },
   nutritionH: { fontSize: 13, fontWeight: "600", color: "#F5F7FB" },
   nutritionBody: { flexDirection: "row", gap: 12, alignItems: "center" },
+  nutritionBodyCompact: { gap: 10 },
   ringWrap: { width: 108, height: 108 },
   ringCenter: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center", paddingTop: 2 },
   ringNum: { fontSize: 30, lineHeight: 30, fontWeight: "700", color: colors.white, letterSpacing: -0.8 },
+  ringNumCompact: { fontSize: 27, lineHeight: 27 },
   ringKcal: { fontSize: 13, lineHeight: 15, color: "#B0BDD0" },
+  ringKcalCompact: { fontSize: 12, lineHeight: 14 },
   ringLogged: { fontSize: 9, lineHeight: 11, color: "#8494AC" },
   targetRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
   target: { fontSize: 11, color: "#8E8E93" },
   pct: { fontSize: 18, lineHeight: 22, fontWeight: "700", color: "#8E8E93" },
+  pctCompact: { fontSize: 17, lineHeight: 20 },
   dots: { marginVertical: 7, flexDirection: "row", gap: 3 },
+  dotsCompact: { marginVertical: 5 },
   dot: { flex: 1, height: 3, borderRadius: 99, backgroundColor: "rgba(128,148,177,0.2)" },
   dotOn: { backgroundColor: colors.accentBlue },
   macro: { marginTop: 7 },
+  macroCompact: { marginTop: 5 },
   macroTop: { flexDirection: "row", alignItems: "center", gap: 6 },
   macroLabel: { width: 54, fontSize: 10, color: "#DCE4EF", fontWeight: "500" },
   macroVal: { flex: 1, fontSize: 10, color: "#8E8E93" },
   macroPct: { fontSize: 10, color: "#C5D0E0", fontWeight: "600" },
   macroTrack: { marginTop: 3, height: 4, borderRadius: 99, backgroundColor: "rgba(128,148,177,0.18)", overflow: "hidden" },
   macroFill: { height: 4, borderRadius: 99 },
+  sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8, marginTop: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: "800", color: colors.white },
+  tag: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.metricBlueSoft,
+    backgroundColor: "rgba(47,111,237,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(47,111,237,0.28)",
+    borderRadius: 99,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  hscroll: { gap: 10 },
+  mealCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    borderRadius: 16,
+    padding: 12,
+    width: 126,
+    height: 96,
+    justifyContent: "space-between",
+  },
+  mealDone: { borderColor: "rgba(47,111,237,0.4)" },
+  mealUnloggedBar: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.metricBlueSoft,
+  },
+  mealUnloggedDashRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(61,123,255,0.42)",
+    borderStyle: "dashed",
+  },
+  mealHead: { flexDirection: "row", alignItems: "center", gap: 5 },
+  mealText: { flex: 1, minWidth: 0 },
+  mealCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.accentBlue,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mealUnloggedCheck: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  mealCheckMark: { color: colors.white, fontSize: 12, fontWeight: "700" },
+  mealName: { fontSize: 13.5, fontWeight: "800", color: colors.white, textAlign: "right" },
+  mealDesc: { fontSize: 10.5, color: "#8EA0B8", marginTop: 1, textAlign: "right" },
+  mealFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  mealTime: { fontSize: 10, color: "#8EA0B8", fontWeight: "600" },
+  pill: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 },
+  pillLog: { backgroundColor: "rgba(47,111,237,0.18)" },
+  pillEdit: { backgroundColor: "rgba(255,255,255,0.06)" },
+  pillText: { fontSize: 9.5, fontWeight: "700" },
+  pillLogText: { color: colors.metricBlueSoft },
+  pillEditText: { color: "#8EA0B8" },
   carouselHead: { marginTop: 10, marginBottom: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   carouselTitle: { fontSize: 12, fontWeight: "600", color: "#F5F7FB" },
   viewAll: { fontSize: 10, fontWeight: "600", color: "#8E8E93" },
@@ -436,17 +584,18 @@ const styles = StyleSheet.create({
   recBody: { paddingHorizontal: 8, paddingVertical: 7, gap: 1 },
   recName: { fontSize: 11, lineHeight: 14, fontWeight: "600", color: "#F5F7FB" },
   recMeta: { fontSize: 10, lineHeight: 13, color: "#8E8E93" },
-  groceryCta: {
-    marginTop: 10,
-    height: 44,
-    borderRadius: 11,
-    backgroundColor: colors.accentBlue,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
+  groceryCtaWrap: {
+    marginTop: layout.tabBarContentInset,
+    flexShrink: 0,
   },
-  groceryCtaText: { color: colors.white, fontSize: 13, fontWeight: "600" },
+  groceryCta: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+  },
   subHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
   back: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   subTitle: { fontSize: 18, fontWeight: "700", letterSpacing: -0.3, color: colors.white, flex: 1 },

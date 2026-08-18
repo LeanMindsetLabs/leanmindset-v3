@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput } from "react-native";
+import { StyleSheet, Text } from "react-native";
+import AppTextInput from "@/src/ui/AppTextInput";
 import { router } from "expo-router";
 import KeyboardScreen from "@/src/layout/KeyboardScreen";
 import { login } from "@/src/services/profileService";
@@ -27,7 +28,7 @@ export default function LoginScreen() {
     <KeyboardScreen edges={["top", "bottom"]}>
       <ScreenHeader title="LeanMindset" subtitle="Sign in to continue your program, readiness, and progress." />
       <Text style={typography.caption}>Email</Text>
-      <TextInput
+      <AppTextInput
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"

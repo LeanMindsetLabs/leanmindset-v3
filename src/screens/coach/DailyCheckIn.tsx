@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import AppTextInput from "@/src/ui/AppTextInput";
 import { useMealsLog } from "@/src/context/MealsLogContext";
 import AppScreen from "@/src/layout/AppScreen";
 import { colors } from "@/src/theme/colors";
+import { layout } from "@/src/theme/layout";
 import CheckInSelect from "@/src/ui/CheckInSelect";
 
 const YESTERDAY_LB = 178.9;
@@ -50,7 +52,7 @@ export default function DailyCheckIn({ onOpenMealsLog }: Props) {
             Weight <Text style={styles.muted}>(enter today)</Text>
           </Text>
           <View style={styles.weightBox}>
-            <TextInput
+            <AppTextInput
               value={weightText}
               onChangeText={setWeightText}
               keyboardType="decimal-pad"
@@ -135,7 +137,7 @@ export default function DailyCheckIn({ onOpenMealsLog }: Props) {
 
         <View style={styles.card}>
           <Text style={styles.eyebrowMuted}>Notes</Text>
-          <TextInput
+          <AppTextInput
             value={notes}
             onChangeText={setNotes}
             placeholder="Notes for your coach..."
@@ -164,7 +166,7 @@ function Kv({ label, value, tone = "calc" }: { label: string; value: string; ton
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: 10, paddingBottom: 18 },
+  scroll: { gap: 10, paddingBottom: layout.tabBarContentInset },
   title: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3, color: colors.white },
   sub: { marginTop: 2, fontSize: 12, fontWeight: "600", color: "#8EA0B8" },
   card: {

@@ -49,32 +49,28 @@ export const INITIAL_MEAL_LOG: MealLogEntry[] = [
     name: "Lunch",
     desc: "Protein + veg",
     time: "12:00 PM",
-    logged: true,
-    itemsSummary: "1x Protein Bowl + 1x Salad Bowl",
+    logged: false,
   },
   {
     id: "snack1",
     name: "Snack",
     desc: "Controlled portion",
     time: "3:00 PM",
-    logged: true,
-    itemsSummary: "1x Fruit Bowl",
+    logged: false,
   },
   {
     id: "dinner",
     name: "Dinner",
     desc: "Protein + veg",
     time: "7:00 PM",
-    logged: true,
-    itemsSummary: "1x Protein Bowl + 1x Salad Bowl",
+    logged: false,
   },
   {
     id: "snack2",
     name: "Snack",
     desc: "Controlled portion",
     time: "9:00 PM",
-    logged: true,
-    itemsSummary: "1x Yogurt + 1x Mix Nuts",
+    logged: false,
   },
 ];
 
@@ -108,6 +104,59 @@ export const GROCERY_FILTERS: { id: GroceryFilter; label: string }[] = [
   { id: "pantry", label: "Pantry" },
 ];
 
+export const FOOD_FILTERS = GROCERY_FILTERS.filter((f) => f.id !== "bowls") as {
+  id: FoodCat;
+  label: string;
+}[];
+
+export type SearchHit =
+  | { kind: "food"; item: FoodItem; label: string }
+  | { kind: "bowl"; item: SavedBowl; label: string };
+
+function rankMatch(name: string, query: string) {
+  const n = name.toLowerCase();
+  if (n.startsWith(query)) return 0;
+  if (n.includes(query)) return 1;
+  return 2;
+}
+
+export function groceryFilterLabel(id: GroceryFilter) {
+  return GROCERY_FILTERS.find((f) => f.id === id)?.label ?? id;
+}
+
+export function searchMealCatalog(query: string, bowls: SavedBowl[]): SearchHit[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 1) return [];
+
+  const foods: SearchHit[] = MEAL_FOODS.filter((f) => f.name.toLowerCase().includes(q)).map((item) => ({
+    kind: "food" as const,
+    item,
+    label: groceryFilterLabel(item.cat),
+  }));
+
+  const bowlHits: SearchHit[] = bowls
+    .filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) || b.items.some((item) => item.toLowerCase().includes(q)),
+    )
+    .map((item) => ({ kind: "bowl" as const, item, label: "Bowls" }));
+
+  return [...foods, ...bowlHits]
+    .sort((a, b) => {
+      const aName = a.kind === "food" ? a.item.name : a.item.name;
+      const bName = b.kind === "food" ? b.item.name : b.item.name;
+      const byRank = rankMatch(aName, q) - rankMatch(bName, q);
+      if (byRank !== 0) return byRank;
+      if (a.kind !== b.kind) return a.kind === "food" ? -1 : 1;
+      return aName.localeCompare(bName);
+    })
+    .slice(0, 6);
+}
+
+export function filterForSearchHit(hit: SearchHit): GroceryFilter {
+  return hit.kind === "food" ? hit.item.cat : "bowls";
+}
+
 export function formatMealSummary(lines: AddedLine[]) {
   const parts = lines
     .filter((a) => a.qty > 0)
@@ -117,4 +166,8 @@ export function formatMealSummary(lines: AddedLine[]) {
 
 export function bowlSub(items: string[]) {
   return items.join(" / ");
+}
+
+export function nextUnloggedMeal(meals: MealLogEntry[]) {
+  return meals.find((m) => !m.logged) ?? null;
 }
