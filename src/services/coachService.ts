@@ -1,3 +1,5 @@
+import { appStorage } from "@/src/lib/storage";
+
 export type CoachRole = "assistant" | "user";
 
 export type CoachMessage = {
@@ -130,6 +132,10 @@ export function getCoachReply(
 ): string {
   const m = message.toLowerCase();
 
+  if (m.includes("wt today") || m.includes("lbs lost today") || m.includes("today's check-in")) {
+    return "Check-in received. I'll keep an eye on weight, water, and how you're feeling. Stay consistent today.";
+  }
+
   if (m.includes("eat tonight") || m.includes("dinner") || m.includes("protein")) {
     return withReflection(
       "Tonight, aim for 30–40g protein. Grilled chicken wraps or Greek yogurt with fruit are the fastest options.",
@@ -180,4 +186,82 @@ export function getCoachReply(
 
 export function replyDelay() {
   return 700;
+}
+
+export const CHECK_IN_HEADING = "Today's Check-In:";
+
+const THREAD_KEY = "lm-coach-thread";
+
+function readThread(): CoachMessage[] {
+  try {
+    const raw = appStorage.getItem(THREAD_KEY);
+    if (!raw) return [...initialMessages];
+    const parsed = JSON.parse(raw) as CoachMessage[];
+    if (!Array.isArray(parsed) || parsed.length === 0) return [...initialMessages];
+    return parsed;
+  } catch {
+    return [...initialMessages];
+  }
+}
+
+let thread: CoachMessage[] = readThread();
+
+export function getCoachThread() {
+  return thread;
+}
+
+export function setCoachThread(next: CoachMessage[]) {
+  thread = next;
+  appStorage.setItem(THREAD_KEY, JSON.stringify(next));
+}
+
+export function rehydrateCoachThread() {
+  thread = readThread();
+}
+
+export function formatCheckInMessage(input: {
+  day: number;
+  lostToday: number;
+  lostTotal: number;
+  weightLb: number;
+  mood: string;
+  waterL: string;
+  exerciseMin: string;
+  bm: string;
+  notes: string;
+}) {
+  const lines = [
+    CHECK_IN_HEADING,
+    `- Day: ${ordinal(input.day)}`,
+    `- Lbs lost today: ${trimNum(input.lostToday)}`,
+    `- Lbs lost total: ${trimNum(input.lostTotal)}`,
+    `- Wt today: ${trimNum(input.weightLb)} lbs`,
+    `- Mood: ${input.mood}`,
+    `- Water: ${input.waterL}L`,
+    `- Exercise: ${input.exerciseMin} min`,
+    `- BM: ${input.bm}`,
+  ];
+  const notes = input.notes.trim();
+  if (notes) lines.push(`Notes: ${notes}`);
+  return lines.join("\n");
+}
+
+export function splitCheckInMessage(text: string) {
+  if (!text.startsWith(CHECK_IN_HEADING)) return null;
+  const breakAt = text.indexOf("\n");
+  if (breakAt === -1) return { heading: text, body: "" };
+  return { heading: text.slice(0, breakAt), body: text.slice(breakAt + 1) };
+}
+
+function trimNum(n: number) {
+  return Number.parseFloat(n.toFixed(1)).toString();
+}
+
+function ordinal(n: number) {
+  const teens = n % 100;
+  if (teens >= 11 && teens <= 13) return `${n}th`;
+  if (n % 10 === 1) return `${n}st`;
+  if (n % 10 === 2) return `${n}nd`;
+  if (n % 10 === 3) return `${n}rd`;
+  return `${n}th`;
 }

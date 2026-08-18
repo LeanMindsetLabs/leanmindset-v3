@@ -11,6 +11,7 @@ const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
   index: "home-outline",
   today: "calendar-outline",
   meals: "restaurant-outline",
+  checkin: "checkbox-outline",
   coach: "chatbubble-ellipses-outline",
   train: "barbell-outline",
   progress: "stats-chart-outline",
@@ -20,6 +21,7 @@ const labels: Record<string, string> = {
   index: "Home",
   today: "Today",
   meals: "Meals",
+  checkin: "Check-in",
   coach: "Coach",
   train: "Train",
   progress: "Progress",
@@ -100,7 +102,7 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
   return (
     <View style={[styles.bar, { paddingBottom: homeInset + 4 }]}>
       {state.routes.map((route, index) => {
-        if (route.name === "today") return null;
+        if (route.name === "today" || route.name === "checkin") return null;
         const active = state.index === index;
         const isCoach = route.name === "coach";
         const isHome = route.name === "index";

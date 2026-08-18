@@ -9,6 +9,7 @@ import { hydrateStorage } from "@/src/lib/storage";
 import { OverlayHost } from "@/src/layout/PhoneOverlay";
 import WebPhonePreview from "@/src/layout/WebPhonePreview";
 import LogMenuHost from "@/src/ui/LogMenuHost";
+import { rehydrateCoachThread } from "@/src/services/coachService";
 import { rehydrateProfile } from "@/src/services/profileService";
 import { rehydrateWeek } from "@/src/services/weekReviewService";
 import { installWebInputFocusReset } from "@/src/lib/webInputFocus";
@@ -40,6 +41,7 @@ export default function RootLayout() {
       .then(() => {
         rehydrateProfile();
         rehydrateWeek();
+        rehydrateCoachThread();
       })
       .finally(() => setReady(true));
   }, []);

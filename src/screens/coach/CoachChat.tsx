@@ -18,16 +18,18 @@ import {
   createAssistantMessage,
   createUserMessage,
   getCoachReply,
-  initialMessages,
+  getCoachThread,
   quickActions,
   replyDelay,
+  setCoachThread,
+  splitCheckInMessage,
   type CoachMessage,
 } from "@/src/services/coachService";
 import { colors } from "@/src/theme/colors";
 import { layout } from "@/src/theme/layout";
 import AvatarBadge from "@/src/ui/AvatarBadge";
+import CheckInAskCard from "@/src/ui/CheckInAskCard";
 import InsightCard from "@/src/ui/InsightCard";
-import LogFab from "@/src/ui/LogFab";
 
 const actionIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
   utensils: "restaurant-outline",
@@ -48,13 +50,14 @@ const inputWeb = {
 } as const;
 
 export default function CoachChat() {
-  const { setComposerOpen, setLogMenuOpen } = useUiVariant();
+  const { setComposerOpen, pendingCoachMessage, setPendingCoachMessage } = useUiVariant();
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<CoachMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<CoachMessage[]>(getCoachThread);
   const [typing, setTyping] = useState(false);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState("");
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [attachOpen, setAttachOpen] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const endRef = useRef<ScrollView>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,24 +122,59 @@ export default function CoachChat() {
   function leaveChat() {
     setComposing(false);
     setComposerOpen(false);
+    setAttachOpen(false);
+  }
+
+  function pickUpload(kind: "photo" | "file") {
+    const fallback = kind === "photo" ? "Photo attached." : "File attached.";
+    if (Platform.OS !== "web" || typeof document === "undefined") {
+      setAttachOpen(false);
+      sendMessage(fallback);
+      return;
+    }
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = kind === "photo" ? "image/*" : "*/*";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      setAttachOpen(false);
+      if (!file) return;
+      sendMessage(`${kind === "photo" ? "Photo" : "File"}: ${file.name}`);
+    };
+    input.click();
+  }
+
+  function commitMessages(updater: (current: CoachMessage[]) => CoachMessage[]) {
+    setMessages((current) => {
+      const next = updater(current);
+      setCoachThread(next);
+      return next;
+    });
   }
 
   function sendMessage(text: string) {
     const trimmed = text.trim();
     if (!trimmed || typing) return;
     const userMessage = createUserMessage(trimmed);
-    setMessages((current) => [...current, userMessage]);
+    commitMessages((current) => [...current, userMessage]);
     setTyping(true);
     setDraft("");
     const reply = getCoachReply(trimmed);
     timerRef.current = setTimeout(() => {
-      setMessages((current) => [
+      commitMessages((current) => [
         ...current.map((msg) => (msg.id === userMessage.id ? { ...msg, status: "read" as const } : msg)),
         createAssistantMessage(reply),
       ]);
       setTyping(false);
     }, replyDelay());
   }
+
+  useEffect(() => {
+    if (!pendingCoachMessage) return;
+    const text = pendingCoachMessage;
+    setPendingCoachMessage(null);
+    sendMessage(text);
+  }, [pendingCoachMessage, setPendingCoachMessage]);
 
   return (
     <AppScreen edges={["top"]} padded={false}>
@@ -184,6 +222,7 @@ export default function CoachChat() {
           <View style={styles.fixedAsk}>
             <Text style={styles.ask}>Ask your coach</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickRow}>
+              <CheckInAskCard />
               {quickActions.map((action) => (
                 <Pressable
                   key={action.id}
@@ -201,38 +240,76 @@ export default function CoachChat() {
         ) : null}
 
         <View style={[styles.composerDock, { paddingBottom: composerPadBottom }]}>
-          <View style={[styles.composer, Platform.OS === "web" ? glassWeb : null]}>
-            <AppTextInput
-              ref={inputRef}
-              style={[styles.input, Platform.OS === "web" ? inputWeb : null]}
-              value={draft}
-              onChangeText={setDraft}
-              onFocus={enterChat}
-              onBlur={() => {
-                blurTimer.current = setTimeout(leaveChat, 180);
-              }}
-              placeholder="Ask your coach..."
-              placeholderTextColor="#6E7D92"
-              accessibilityLabel="Ask your coach"
-              returnKeyType="send"
-              onSubmitEditing={() => sendMessage(draft)}
-            />
-            <Pressable style={styles.mic} accessibilityLabel="Voice memo">
-              <Ionicons name="mic-outline" size={16} color="#C5D4EA" />
-            </Pressable>
-            <Pressable
-              style={[styles.send, !draft.trim() && styles.sendOff]}
-              disabled={!draft.trim()}
-              onPress={() => sendMessage(draft)}
-              accessibilityLabel="Send message"
-            >
-              <Ionicons name="arrow-up" size={18} color={colors.white} />
-            </Pressable>
+          {attachOpen ? (
+            <View style={styles.attachTray}>
+              <Pressable style={styles.attachItem} onPress={() => pickUpload("photo")} accessibilityLabel="Upload photo">
+                <Ionicons name="image-outline" size={18} color={colors.metricBlueSoft} />
+                <Text style={styles.attachLabel}>Photo</Text>
+              </Pressable>
+              <Pressable style={styles.attachItem} onPress={() => pickUpload("file")} accessibilityLabel="Upload file">
+                <Ionicons name="document-outline" size={18} color={colors.metricBlueSoft} />
+                <Text style={styles.attachLabel}>File</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <View style={styles.composerRow}>
+            <View style={styles.plusSlot}>
+              <Pressable
+                style={[styles.plus, Platform.OS === "web" ? glassWeb : null]}
+                onPress={() => setAttachOpen((open) => !open)}
+                accessibilityLabel="Add photo or file"
+              >
+                <Ionicons name="add" size={22} color={colors.white} />
+              </Pressable>
+            </View>
+            <View style={[styles.composer, Platform.OS === "web" ? glassWeb : null]}>
+              <AppTextInput
+                ref={inputRef}
+                style={[styles.input, Platform.OS === "web" ? inputWeb : null]}
+                value={draft}
+                onChangeText={setDraft}
+                onFocus={() => {
+                  setAttachOpen(false);
+                  enterChat();
+                }}
+                onBlur={() => {
+                  blurTimer.current = setTimeout(leaveChat, 180);
+                }}
+                placeholder="Ask your coach...."
+                placeholderTextColor="#8E8E93"
+                accessibilityLabel="Ask your coach"
+                returnKeyType="send"
+                onSubmitEditing={() => sendMessage(draft)}
+              />
+              {draft.trim() ? (
+                <Pressable
+                  style={styles.send}
+                  onPress={() => sendMessage(draft)}
+                  accessibilityLabel="Send message"
+                >
+                  <Ionicons name="arrow-up" size={18} color={colors.white} />
+                </Pressable>
+              ) : (
+                <Pressable style={styles.mic} accessibilityLabel="Voice memo">
+                  <Ionicons name="mic-outline" size={22} color="#FFFFFF" />
+                </Pressable>
+              )}
+            </View>
           </View>
-          {!composing ? <LogFab onPress={() => setLogMenuOpen(true)} /> : null}
         </View>
       </View>
     </AppScreen>
+  );
+}
+
+function BubbleText({ text }: { text: string }) {
+  const checkIn = splitCheckInMessage(text);
+  if (!checkIn) return <Text style={styles.bubbleText}>{text}</Text>;
+  return (
+    <Text style={styles.bubbleText}>
+      <Text style={styles.checkInHeading}>{checkIn.heading}</Text>
+      {checkIn.body ? `\n${checkIn.body}` : null}
+    </Text>
   );
 }
 
@@ -250,7 +327,7 @@ function Bubble({ message, typing }: { message: CoachMessage; typing?: boolean }
           {typing ? (
             <Text style={styles.typing}>● ● ●</Text>
           ) : (
-            <Text style={styles.bubbleText}>{message.text}</Text>
+            <BubbleText text={message.text} />
           )}
         </View>
         {!typing && message.time ? (
@@ -302,6 +379,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
   },
   bubbleText: { fontSize: 15, lineHeight: 20, color: "#FFFFFF", fontWeight: "400" },
+  checkInHeading: { fontSize: 16, lineHeight: 21, fontWeight: "800", color: "#FFFFFF" },
   typing: { color: "rgba(255,255,255,0.55)", fontSize: 15, letterSpacing: 3 },
   meta: { marginTop: 4, flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 4 },
   metaUser: { justifyContent: "flex-end" },
@@ -323,12 +401,49 @@ const styles = StyleSheet.create({
   },
   quickLabel: { fontSize: 10, lineHeight: 13, fontWeight: "500", color: "#E8EEF6" },
   composerDock: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingTop: 8,
     flexShrink: 0,
+    gap: 8,
+  },
+  attachTray: {
+    flexDirection: "row",
+    gap: 8,
+    paddingLeft: 56 + 8,
+  },
+  attachItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  attachLabel: { color: "#F5F7FB", fontSize: 12, fontWeight: "600" },
+  composerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  plusSlot: {
+    width: 56,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  plus: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(44,44,46,0.38)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   composer: {
     flex: 1,
@@ -349,11 +464,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 34,
     color: "#F5F7FB",
-    fontSize: 11,
+    fontSize: 14.4,
     backgroundColor: "transparent",
     padding: 0,
   },
-  mic: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  mic: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   send: {
     width: 36,
     height: 36,
@@ -362,5 +477,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  sendOff: { opacity: 0.38 },
 });

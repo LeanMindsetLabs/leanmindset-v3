@@ -3,26 +3,26 @@ import { useUiVariant } from "@/src/context/UiVariantContext";
 import UiVariantToggle from "@/src/ui/UiVariantToggle";
 
 export default function PreviewToggles() {
-  const { previewRoute, layoutVariant, setLayoutVariant, coachVariant, setCoachVariant } = useUiVariant();
+  const { previewRoute, layoutVariant, setLayoutVariant, checkInPicker, setCheckInPicker } = useUiVariant();
 
-  if (previewRoute === "meals" || previewRoute === "index" || previewRoute === "progress" || previewRoute === "login" || previewRoute === "workout") {
-    return null;
-  }
-
-  if (previewRoute === "coach") {
+  if (previewRoute === "checkin") {
     return (
       <UiVariantToggle
         compact
-        label="Coach layout"
-        value={coachVariant}
-        onChange={setCoachVariant}
+        label="Check-in pickers"
+        value={checkInPicker}
+        onChange={setCheckInPicker}
         options={[
-          { id: "chat", label: "Chat" },
-          { id: "checkin", label: "Check-in" },
-          { id: "now", label: "Now" },
+          { id: "1", label: "1" },
+          { id: "2", label: "2" },
+          { id: "3", label: "3" },
         ]}
       />
     );
+  }
+
+  if (previewRoute === "meals" || previewRoute === "index" || previewRoute === "progress" || previewRoute === "login" || previewRoute === "workout" || previewRoute === "coach") {
+    return null;
   }
 
   return (

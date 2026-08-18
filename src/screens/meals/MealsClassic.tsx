@@ -200,10 +200,9 @@ export default function MealsClassic({ onAskCoach }: Props) {
   }
 
   return (
-    <AppScreen edges={["top"]}>
+    <AppScreen edges={["top"]} padded={false}>
       <View style={styles.page}>
-        <View style={styles.pageSpacer} />
-        <View style={styles.pageContent}>
+        <View style={styles.top}>
           <View style={styles.header}>
             <View>
               <Text style={styles.title}>Meals</Text>
@@ -211,7 +210,8 @@ export default function MealsClassic({ onAskCoach }: Props) {
             </View>
             <AvatarBadge />
           </View>
-
+        </View>
+        <View style={styles.pageContent}>
           <NutritionCard nutrition={nutrition} kcalPct={kcalPct} compact />
           <ProteinInsight short={short} onAskCoach={onAskCoach} />
 
@@ -288,6 +288,7 @@ export default function MealsClassic({ onAskCoach }: Props) {
             ))}
           </View>
         </View>
+        <View style={styles.pageSpacer} />
 
         <View style={styles.groceryCtaWrap}>
           <Pressable style={styles.groceryCta} onPress={() => setView("grocery")}>
@@ -460,10 +461,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   pageSpacer: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
-  pageContent: { flexShrink: 0 },
+  pageContent: { flexShrink: 0, paddingHorizontal: 16 },
   flex: { flex: 1, minWidth: 0 },
   mealsSection: { flexShrink: 0 },
   mealRow: { height: 96 },
+  top: { paddingHorizontal: 16, paddingTop: 8 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   title: { fontSize: 26, lineHeight: 31, fontWeight: "700", letterSpacing: -0.4, color: "#F5F7FB" },
   subtitle: { marginTop: 1, fontSize: 11, lineHeight: 15, color: "#8E8E93" },
@@ -477,7 +479,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: colors.surface,
   },
-  nutritionCompact: { marginTop: 10, paddingTop: 8, paddingBottom: 10 },
+  nutritionCompact: { marginTop: layout.tabBarContentInset, paddingTop: 8, paddingBottom: 10 },
   nutritionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   nutritionHeadCompact: { marginBottom: 6 },
   nutritionH: { fontSize: 13, fontWeight: "600", color: "#F5F7FB" },
@@ -586,6 +588,7 @@ const styles = StyleSheet.create({
   recMeta: { fontSize: 10, lineHeight: 13, color: "#8E8E93" },
   groceryCtaWrap: {
     marginTop: layout.tabBarContentInset,
+    marginHorizontal: 16,
     flexShrink: 0,
   },
   groceryCta: {
