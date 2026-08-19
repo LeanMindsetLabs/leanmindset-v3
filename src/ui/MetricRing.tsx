@@ -5,6 +5,7 @@ import Svg, { Circle } from "react-native-svg";
 type MetricRingProps = {
   size: number;
   strokeWidth?: number;
+  trackWidth?: number;
   progress: number;
   fillColor: string;
   trackColor?: string;
@@ -14,12 +15,15 @@ type MetricRingProps = {
 export default function MetricRing({
   size,
   strokeWidth = 8,
+  trackWidth,
   progress,
   fillColor,
   trackColor = "rgba(255,255,255,0.1)",
   children,
 }: MetricRingProps) {
-  const radius = (size - strokeWidth) / 2;
+  const fillStroke = strokeWidth;
+  const trackStroke = trackWidth ?? strokeWidth;
+  const radius = (size - fillStroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(1, Math.max(0, progress));
   const offset = circumference * (1 - clamped);
@@ -33,7 +37,7 @@ export default function MetricRing({
           cy={center}
           r={radius}
           stroke={trackColor}
-          strokeWidth={strokeWidth}
+          strokeWidth={trackStroke}
           fill="none"
         />
         <Circle
@@ -41,7 +45,7 @@ export default function MetricRing({
           cy={center}
           r={radius}
           stroke={fillColor}
-          strokeWidth={strokeWidth}
+          strokeWidth={fillStroke}
           fill="none"
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={offset}

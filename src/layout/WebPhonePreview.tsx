@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { colors } from "@/src/theme/colors";
 import PreviewToggles from "@/src/ui/PreviewToggles";
+import WebPhoneKeyboard from "@/src/ui/WebPhoneKeyboard";
 
 /** Visual-reference preview only. Native phones never use this frame. */
 export const IPHONE_15 = {
@@ -29,7 +30,10 @@ export default function WebPhonePreview({ children }: { children: ReactNode }) {
               <PreviewToggles />
             </View>
           </View>
-          <View style={styles.body}>{children}</View>
+          <View style={styles.body}>
+            {children}
+            <WebPhoneKeyboard />
+          </View>
           <View style={styles.homeIndicator} pointerEvents="none" />
         </View>
       </View>

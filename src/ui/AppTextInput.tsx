@@ -1,11 +1,12 @@
 import { forwardRef } from "react";
-import { Platform, TextInput, type TextInputProps } from "react-native";
+import { Platform, TextInput, type TextInputProps, type TextStyle } from "react-native";
 
 /** Removes the default browser focus ring on web (yellow outline on TextInput). */
-export const textInputWebFocus = Platform.select({
+export const textInputWebFocus = Platform.select<TextStyle>({
   web: {
-    outlineStyle: "none" as const,
+    outlineStyle: "solid",
     outlineWidth: 0,
+    outlineColor: "transparent",
     boxShadow: "none",
   },
   default: {},

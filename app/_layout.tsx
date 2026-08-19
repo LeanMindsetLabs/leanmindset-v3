@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DarkTheme, Stack, ThemeProvider } from "expo-router";
+import { DarkTheme, Stack, ThemeProvider, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -34,6 +34,8 @@ const navTheme = {
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  const pathname = usePathname();
+  const isLegal = pathname.startsWith("/legal");
 
   useEffect(() => {
     installWebInputFocusReset();
@@ -45,6 +47,18 @@ export default function RootLayout() {
       })
       .finally(() => setReady(true));
   }, []);
+
+  if (isLegal) {
+    return (
+      <ThemeProvider value={navTheme}>
+        <View style={styles.app}>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#0F1112" } }}>
+            <Stack.Screen name="legal" />
+          </Stack>
+        </View>
+      </ThemeProvider>
+    );
+  }
 
   if (!ready) {
     return (
@@ -68,6 +82,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="login" />
               <Stack.Screen name="workout" />
+              <Stack.Screen name="legal" />
             </Stack>
             <LogMenuHost />
             <OverlayHost />
@@ -79,7 +94,7 @@ export default function RootLayout() {
 
   return (
     <UiVariantProvider>
-      <WebPhonePreview>{app}</WebPhonePreview>
+      {isLegal ? app : <WebPhonePreview>{app}</WebPhonePreview>}
     </UiVariantProvider>
   );
 }

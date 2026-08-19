@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import AppTextInput from "@/src/ui/AppTextInput";
 import { router } from "expo-router";
 import KeyboardScreen from "@/src/layout/KeyboardScreen";
 import { login } from "@/src/services/profileService";
+import { openLegalPage } from "@/src/lib/legal";
 import { colors } from "@/src/theme/colors";
 import { radius } from "@/src/theme/radius";
 import { spacing } from "@/src/theme/spacing";
@@ -40,6 +41,21 @@ export default function LoginScreen() {
         accessibilityLabel="Email"
       />
       <PrimaryButton label="Continue" onPress={submit} />
+      <View style={styles.legal}>
+        <Text style={styles.legalNote}>By continuing you agree to our</Text>
+        <View style={styles.legalRow}>
+          <Pressable onPress={() => void openLegalPage("terms")} accessibilityRole="link">
+            <Text style={styles.legalLink}>Terms & Conditions</Text>
+          </Pressable>
+          <Text style={styles.legalNote}> · </Text>
+          <Pressable onPress={() => void openLegalPage("privacy")} accessibilityRole="link">
+            <Text style={styles.legalLink}>Privacy Policy</Text>
+          </Pressable>
+        </View>
+        <Pressable onPress={() => void openLegalPage("community")} accessibilityRole="link">
+          <Text style={styles.legalLink}>Community Guidelines</Text>
+        </Pressable>
+      </View>
     </KeyboardScreen>
   );
 }
@@ -51,5 +67,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     color: colors.textPrimary,
     paddingHorizontal: spacing.md,
+  },
+  legal: {
+    marginTop: spacing.md,
+    alignItems: "center",
+    gap: 6,
+  },
+  legalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  legalNote: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: "center",
+  },
+  legalLink: {
+    ...typography.caption,
+    color: colors.accentBlue,
+    fontWeight: "600",
   },
 });

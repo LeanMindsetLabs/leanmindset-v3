@@ -14,7 +14,7 @@ const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
   checkin: "checkbox-outline",
   coach: "chatbubble-ellipses-outline",
   train: "barbell-outline",
-  progress: "stats-chart-outline",
+  profile: "person-outline",
 };
 
 const labels: Record<string, string> = {
@@ -24,7 +24,7 @@ const labels: Record<string, string> = {
   checkin: "Check-in",
   coach: "Coach",
   train: "Train",
-  progress: "Progress",
+  profile: "Profile",
 };
 
 const TAB_ICON_SIZE = 24;
@@ -59,14 +59,14 @@ function CoachBubbleIcon({ color, size = 26 }: { color: string; size?: number })
 
 type TabBarProps = {
   state: { index: number; routes: { key: string; name: string }[] };
-  navigation: { navigate: (name: string) => void };
+  navigation: { navigate: (name: string, params?: { screen: string }) => void };
 };
 
 const tabWebFocus =
   Platform.OS === "web"
     ? ({
         outlineWidth: 0,
-        outlineStyle: "none",
+        outlineStyle: "solid" as const,
         outlineColor: "transparent",
         boxShadow: "none",
       } as const)
@@ -100,7 +100,16 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
   const homeInset = Platform.OS === "web" ? 34 : insets.bottom;
 
   return (
-    <View style={[styles.bar, { paddingBottom: homeInset + 4 }]}>
+    <View
+      style={[
+        styles.bar,
+        {
+          paddingBottom: homeInset + 4,
+          backgroundColor: activeName === "profile" ? colors.profileBlack : colors.background,
+          borderTopWidth: activeName === "profile" ? 0 : 1,
+        },
+      ]}
+    >
       {state.routes.map((route, index) => {
         if (route.name === "today" || route.name === "checkin") return null;
         const active = state.index === index;
@@ -112,7 +121,11 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
             key={route.key}
             accessibilityRole="button"
             accessibilityLabel={labels[route.name] ?? route.name}
-            onPress={() => navigation.navigate(route.name)}
+            onPress={() =>
+              route.name === "profile"
+                ? navigation.navigate("profile", { screen: "index" })
+                : navigation.navigate(route.name)
+            }
             style={[styles.item, isCoach && styles.coachItem, isHome && styles.homeItem, tabWebFocus]}
           >
             {isCoach ? (
@@ -128,15 +141,25 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
             ) : isHome ? (
               <LeanMindsetIcon size={HOME_LOGO_SIZE} textScale={1.15} dimmed={!active} />
             ) : (
-              <Ionicons name={icons[route.name] ?? "ellipse-outline"} size={TAB_ICON_SIZE} color={tabColor} />
+              <Ionicons
+                name={
+                  route.name === "profile" && active
+                    ? "person"
+                    : (icons[route.name] ?? "ellipse-outline")
+                }
+                size={TAB_ICON_SIZE}
+                color={tabColor}
+              />
             )}
             {!isHome ? (
-              <Text
-                numberOfLines={1}
-                style={[styles.label, active && styles.labelActive]}
-              >
-                {labels[route.name] ?? route.name}
-              </Text>
+              <View style={styles.labelWrap}>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.label, active && styles.labelActive]}
+                >
+                  {labels[route.name] ?? route.name}
+                </Text>
+              </View>
             ) : null}
           </Pressable>
         );
@@ -185,6 +208,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   labelActive: { color: colors.accentBlue },
+  labelWrap: {
+    alignItems: "center",
+    gap: 3,
+  },
   orb: {
     width: 52,
     height: 52,

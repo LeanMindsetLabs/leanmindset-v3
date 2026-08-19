@@ -17,7 +17,7 @@ export default function TabLayout() {
       <Tabs.Screen name="checkin" options={{ href: null }} />
       <Tabs.Screen name="coach" options={{ title: "Coach" }} />
       <Tabs.Screen name="train" options={{ title: "Train" }} />
-      <Tabs.Screen name="progress" options={{ title: "Progress" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );
 }

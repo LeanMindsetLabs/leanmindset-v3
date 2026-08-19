@@ -10,6 +10,7 @@ type AppScreenProps = {
   edges?: ("top" | "right" | "bottom" | "left")[];
   padded?: boolean;
   style?: ViewStyle;
+  backgroundColor?: string;
 };
 
 export default function AppScreen({
@@ -17,9 +18,10 @@ export default function AppScreen({
   edges = ["top"],
   padded = true,
   style,
+  backgroundColor,
 }: AppScreenProps) {
   return (
-    <SafeAreaView edges={edges} style={styles.safe}>
+    <SafeAreaView edges={edges} style={[styles.safe, backgroundColor ? { backgroundColor } : null]}>
       <View style={[styles.body, padded ? styles.padded : null, style]}>{children}</View>
     </SafeAreaView>
   );

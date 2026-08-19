@@ -4,5 +4,8 @@
   "devCommand": "npx expo start --web",
   "installCommand": "npm install",
   "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [
+    { "source": "/legal/:path*", "destination": "/legal/:path*" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }

@@ -9,6 +9,7 @@ type ScrollableScreenProps = {
   edges?: ("top" | "right" | "bottom" | "left")[];
   padded?: boolean;
   contentStyle?: ViewStyle;
+  backgroundColor?: string;
 };
 
 export default function ScrollableScreen({
@@ -16,9 +17,10 @@ export default function ScrollableScreen({
   edges = ["top"],
   padded = true,
   contentStyle,
+  backgroundColor,
 }: ScrollableScreenProps) {
   return (
-    <AppScreen edges={edges} padded={padded}>
+    <AppScreen edges={edges} padded={padded} backgroundColor={backgroundColor}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, contentStyle]}

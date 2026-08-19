@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.metricBlueSoft,
   },
   mealUnloggedDashRing: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(61,123,255,0.42)",

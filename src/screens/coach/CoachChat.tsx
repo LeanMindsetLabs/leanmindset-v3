@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
-  Keyboard,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +12,7 @@ import {
 import AppTextInput from "@/src/ui/AppTextInput";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppScreen from "@/src/layout/AppScreen";
+import { useKeyboardHeight } from "@/src/hooks/useKeyboardHeight";
 import { useUiVariant } from "@/src/context/UiVariantContext";
 import {
   createAssistantMessage,
@@ -56,7 +56,7 @@ export default function CoachChat() {
   const [typing, setTyping] = useState(false);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState("");
-  const [keyboardInset, setKeyboardInset] = useState(0);
+  const keyboardInset = useKeyboardHeight();
   const [attachOpen, setAttachOpen] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const endRef = useRef<ScrollView>(null);
@@ -72,39 +72,10 @@ export default function CoachChat() {
   }, [setComposerOpen]);
 
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const show = Keyboard.addListener(showEvent, (event) => {
-      setKeyboardInset(event.endCoordinates.height);
+    if (keyboardInset > 0) {
       setTimeout(() => endRef.current?.scrollToEnd({ animated: true }), 50);
-    });
-    const hide = Keyboard.addListener(hideEvent, () => setKeyboardInset(0));
-
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (Platform.OS !== "web" || typeof window === "undefined") return;
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-
-    const sync = () => {
-      const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      setKeyboardInset(inset);
-    };
-
-    sync();
-    viewport.addEventListener("resize", sync);
-    viewport.addEventListener("scroll", sync);
-    return () => {
-      viewport.removeEventListener("resize", sync);
-      viewport.removeEventListener("scroll", sync);
-    };
-  }, []);
+    }
+  }, [keyboardInset]);
 
   const composerPadBottom =
     keyboardInset > 0
@@ -122,7 +93,6 @@ export default function CoachChat() {
   function leaveChat() {
     setComposing(false);
     setComposerOpen(false);
-    setAttachOpen(false);
   }
 
   function pickUpload(kind: "photo" | "file") {
@@ -240,26 +210,31 @@ export default function CoachChat() {
         ) : null}
 
         <View style={[styles.composerDock, { paddingBottom: composerPadBottom }]}>
-          {attachOpen ? (
-            <View style={styles.attachTray}>
-              <Pressable style={styles.attachItem} onPress={() => pickUpload("photo")} accessibilityLabel="Upload photo">
-                <Ionicons name="image-outline" size={18} color={colors.metricBlueSoft} />
-                <Text style={styles.attachLabel}>Photo</Text>
-              </Pressable>
-              <Pressable style={styles.attachItem} onPress={() => pickUpload("file")} accessibilityLabel="Upload file">
-                <Ionicons name="document-outline" size={18} color={colors.metricBlueSoft} />
-                <Text style={styles.attachLabel}>File</Text>
-              </Pressable>
-            </View>
-          ) : null}
           <View style={styles.composerRow}>
             <View style={styles.plusSlot}>
+              {attachOpen ? (
+                <View style={styles.attachMenu} accessibilityViewIsModal>
+                  <Pressable style={styles.attachItem} onPress={() => pickUpload("photo")} accessibilityLabel="Upload photo">
+                    <Ionicons name="image-outline" size={18} color={colors.metricBlueSoft} />
+                    <Text style={styles.attachLabel}>Photo</Text>
+                  </Pressable>
+                  <View style={styles.attachSplit} />
+                  <Pressable style={styles.attachItem} onPress={() => pickUpload("file")} accessibilityLabel="Upload file">
+                    <Ionicons name="document-outline" size={18} color={colors.metricBlueSoft} />
+                    <Text style={styles.attachLabel}>File</Text>
+                  </Pressable>
+                  <View style={styles.attachCaret} />
+                </View>
+              ) : null}
               <Pressable
-                style={[styles.plus, Platform.OS === "web" ? glassWeb : null]}
-                onPress={() => setAttachOpen((open) => !open)}
+                style={[styles.plus, attachOpen && styles.plusOpen, Platform.OS === "web" ? glassWeb : null]}
+                onPress={() => {
+                  if (blurTimer.current) clearTimeout(blurTimer.current);
+                  setAttachOpen((open) => !open);
+                }}
                 accessibilityLabel="Add photo or file"
               >
-                <Ionicons name="add" size={22} color={colors.white} />
+                <Ionicons name={attachOpen ? "close" : "add"} size={22} color={colors.white} />
               </Pressable>
             </View>
             <View style={[styles.composer, Platform.OS === "web" ? glassWeb : null]}>
@@ -404,29 +379,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     flexShrink: 0,
-    gap: 8,
+    overflow: "visible",
+    zIndex: 6,
   },
-  attachTray: {
-    flexDirection: "row",
-    gap: 8,
-    paddingLeft: 56 + 8,
+  attachMenu: {
+    position: "absolute",
+    left: 0,
+    bottom: 56,
+    minWidth: 148,
+    borderRadius: 14,
+    backgroundColor: "#2C2C2E",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    paddingVertical: 4,
+    zIndex: 8,
+    ...Platform.select({
+      web: { boxShadow: "0 10px 24px rgba(0,0,0,0.45)" as const },
+      default: {
+        shadowColor: "#000",
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 12,
+      },
+    }),
+  },
+  attachSplit: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    marginHorizontal: 10,
+  },
+  attachCaret: {
+    position: "absolute",
+    left: 18,
+    bottom: -6,
+    width: 12,
+    height: 12,
+    backgroundColor: "#2C2C2E",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    transform: [{ rotate: "45deg" }],
   },
   attachItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
-  attachLabel: { color: "#F5F7FB", fontSize: 12, fontWeight: "600" },
+  attachLabel: { color: "#F5F7FB", fontSize: 15, fontWeight: "600" },
   composerRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    overflow: "visible",
+    zIndex: 6,
   },
   plusSlot: {
     width: 56,
@@ -434,6 +442,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    overflow: "visible",
+    zIndex: 7,
   },
   plus: {
     width: 48,
@@ -444,6 +454,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.22)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  plusOpen: {
+    backgroundColor: "rgba(44,44,46,0.72)",
   },
   composer: {
     flex: 1,

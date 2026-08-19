@@ -1,13 +1,7 @@
 import { type ReactNode } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-  type ViewStyle,
-} from "react-native";
+import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import AppScreen from "./AppScreen";
+import { useKeyboardHeight } from "@/src/hooks/useKeyboardHeight";
 import { spacing } from "@/src/theme/spacing";
 
 type KeyboardScreenProps = {
@@ -23,23 +17,22 @@ export default function KeyboardScreen({
   edges = ["top"],
   contentStyle,
 }: KeyboardScreenProps) {
+  const keyboardHeight = useKeyboardHeight();
+
   return (
     <AppScreen edges={edges}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
-      >
+      <View style={[styles.flex, { paddingBottom: keyboardHeight }]}>
         <ScrollView
           style={styles.flex}
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
           {children}
         </ScrollView>
         {footer ? <View style={styles.footer}>{footer}</View> : null}
-      </KeyboardAvoidingView>
+      </View>
     </AppScreen>
   );
 }

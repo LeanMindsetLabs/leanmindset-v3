@@ -1,5 +1,6 @@
 import { useLayoutEffect, useSyncExternalStore, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { useKeyboardHeight } from "@/src/hooks/useKeyboardHeight";
 
 let overlayNode: ReactNode | null = null;
 const listeners = new Set<() => void>();
@@ -25,9 +26,10 @@ function getSnapshot() {
 /** Renders sheets inside the phone body (covers tabs, stays in the iPhone frame on web). */
 export function OverlayHost() {
   const overlay = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const keyboardHeight = useKeyboardHeight();
   if (!overlay) return null;
   return (
-    <View pointerEvents="box-none" style={styles.host}>
+    <View pointerEvents="box-none" style={[styles.host, keyboardHeight > 0 ? { bottom: keyboardHeight } : null]}>
       {overlay}
     </View>
   );

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { type Href, router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { homeContent as content } from "@/src/services/homeContent";
@@ -73,10 +73,15 @@ export default function HomeScreen() {
 
 function Avatar() {
   return (
-    <View style={styles.avatar} accessibilityLabel="Profile avatar">
+    <Pressable
+      style={styles.avatar}
+      accessibilityRole="button"
+      accessibilityLabel="Profile"
+      onPress={() => router.push("/(tabs)/profile/" as Href)}
+    >
       <Text style={styles.avatarText}>{content.avatarInitial}</Text>
       <View style={styles.online} />
-    </View>
+    </Pressable>
   );
 }
 

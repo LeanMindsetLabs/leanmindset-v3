@@ -1,10 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import AppTextInput from "@/src/ui/AppTextInput";
+import { CheckInInputAccessory, CHECKIN_INPUT_ACCESSORY } from "@/src/ui/CheckInInputAccessory";
 import { useUiVariant } from "@/src/context/UiVariantContext";
 import AppScreen from "@/src/layout/AppScreen";
+import { useKeyboardHeight } from "@/src/hooks/useKeyboardHeight";
 import { formatCheckInMessage } from "@/src/services/coachService";
 import { getProfile } from "@/src/services/profileService";
 import { colors } from "@/src/theme/colors";
@@ -31,6 +33,7 @@ export default function DailyCheckIn() {
   const { setPendingCoachMessage, checkInPicker } = useUiVariant();
   const list = checkInPicker === "1";
   const cards = checkInPicker === "2";
+  const keyboardHeight = useKeyboardHeight();
   const program = getProfile().program;
   const [step, setStep] = useState<Step>(0);
   const [weightText, setWeightText] = useState("");
@@ -98,7 +101,14 @@ export default function DailyCheckIn() {
 
   return (
     <AppScreen edges={["top"]}>
-      <View style={styles.page}>
+      {step === 0 || step === 5 ? (
+        <CheckInInputAccessory
+          label={step === 0 ? "Continue" : notes.trim() ? "Continue" : "Skip"}
+          disabled={step === 0 && weight == null}
+          onPress={next}
+        />
+      ) : null}
+      <View style={[styles.page, { paddingBottom: keyboardHeight }]}>
         <View style={styles.head}>
           <View style={styles.headRow}>
             <Text style={styles.kicker}>Daily check-in</Text>
@@ -125,6 +135,7 @@ export default function DailyCheckIn() {
           style={styles.flex}
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
           {step === 0 ? (
@@ -140,6 +151,11 @@ export default function DailyCheckIn() {
                     placeholderTextColor="#6E7D92"
                     style={styles.weightInput}
                     accessibilityLabel="Today's weight in pounds"
+                    returnKeyType="done"
+                    inputAccessoryViewID={Platform.OS === "ios" ? CHECKIN_INPUT_ACCESSORY : undefined}
+                    onSubmitEditing={() => {
+                      if (weight != null) next();
+                    }}
                   />
                   <Text style={styles.lb}>lb</Text>
                 </View>
@@ -151,6 +167,9 @@ export default function DailyCheckIn() {
                 onChangeText={setWeightText}
                 onNudge={nudgeWeight}
                 onSameAsYesterday={() => setWeightText(YESTERDAY_LB.toFixed(1))}
+                onSubmit={() => {
+                  if (weight != null) next();
+                }}
               />
             )
           ) : null}
@@ -243,6 +262,10 @@ export default function DailyCheckIn() {
               placeholderTextColor="#6E7D92"
               style={styles.notes}
               multiline
+              returnKeyType="done"
+              blurOnSubmit
+              inputAccessoryViewID={Platform.OS === "ios" ? CHECKIN_INPUT_ACCESSORY : undefined}
+              onSubmitEditing={next}
             />
           ) : null}
 
@@ -262,7 +285,7 @@ export default function DailyCheckIn() {
           ) : null}
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, keyboardHeight > 0 && styles.footerKeyboard]}>
           {step !== 0 ? (
             <Pressable style={styles.ghost} onPress={back}>
               <Text style={styles.ghostText}>Back</Text>
@@ -275,7 +298,7 @@ export default function DailyCheckIn() {
               <Text style={styles.primaryText}>Send check-in</Text>
             </Pressable>
           ) : step === 0 ? (
-            <Pressable style={[styles.primary, weight == null && styles.primaryOff]} disabled={weight == null} onPress={next}>
+            <Pressable style={[styles.primary, weight == null && styles.primaryOff]} disabled={weight == null} onPress={() => { Keyboard.dismiss(); next(); }}>
               <Text style={styles.primaryText}>Continue</Text>
             </Pressable>
           ) : step === 5 ? (
@@ -334,12 +357,14 @@ function WeightStepper({
   onChangeText,
   onNudge,
   onSameAsYesterday,
+  onSubmit,
 }: {
   compact?: boolean;
   value: string;
   onChangeText: (next: string) => void;
   onNudge: (delta: number) => void;
   onSameAsYesterday: () => void;
+  onSubmit?: () => void;
 }) {
   return (
     <View style={styles.block}>
@@ -356,6 +381,9 @@ function WeightStepper({
             placeholderTextColor="#6E7D92"
             style={[styles.stepperInput, compact && styles.stepperInputSlim]}
             accessibilityLabel="Today's weight in pounds"
+            returnKeyType="done"
+            inputAccessoryViewID={Platform.OS === "ios" ? CHECKIN_INPUT_ACCESSORY : undefined}
+            onSubmitEditing={onSubmit}
           />
           <Text style={styles.lb}>lb</Text>
         </View>
@@ -731,6 +759,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: 8,
     paddingBottom: layout.tabBarContentInset,
+  },
+  footerKeyboard: {
+    paddingBottom: 8,
   },
   ghost: {
     borderRadius: 14,

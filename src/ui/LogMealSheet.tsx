@@ -241,7 +241,8 @@ export default function LogMealSheet({ mealName, mealTime, onClose, onSave, onOp
                 placeholder="Search bowls, chicken, broccoli..."
                 placeholderTextColor="#8EA0B8"
                 style={styles.searchInput}
-                returnKeyType="go"
+                returnKeyType="search"
+                blurOnSubmit
                 onSubmitEditing={() => {
                   if (topSuggestion) pickSuggestion(topSuggestion);
                 }}
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
   },
   sheetWrap: {
     width: "100%",
-    maxHeight: "88%",
+    maxHeight: "100%",
   },
   sheet: {
     backgroundColor: colors.surfaceElevated,

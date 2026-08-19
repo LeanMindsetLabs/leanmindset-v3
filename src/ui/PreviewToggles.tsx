@@ -21,7 +21,7 @@ export default function PreviewToggles() {
     );
   }
 
-  if (previewRoute === "meals" || previewRoute === "index" || previewRoute === "progress" || previewRoute === "login" || previewRoute === "workout" || previewRoute === "coach") {
+  if (previewRoute === "meals" || previewRoute === "index" || previewRoute === "profile" || previewRoute === "login" || previewRoute === "workout" || previewRoute === "coach") {
     return null;
   }
 

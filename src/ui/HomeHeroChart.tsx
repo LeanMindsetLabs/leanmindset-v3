@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { router } from "expo-router";
+import { type Href, router } from "expo-router";
 import { colors } from "@/src/theme/colors";
 
 const READY = 0.72;
@@ -14,7 +14,7 @@ const TRAIN_N = 8.4;
 export default function HomeHeroChart() {
   return (
     <View style={styles.dials}>
-      <Pressable style={styles.dial} onPress={() => router.push("/(tabs)/progress")}>
+      <Pressable style={styles.dial} onPress={() => router.push("/(tabs)/profile/" as Href)}>
         <DualRing size={104} progress={READY} fillColor="#F5C400">
           <Text style={styles.num}>{READY_N}</Text>
           <Text style={styles.denom}>/100</Text>
