@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { DarkTheme, Stack, ThemeProvider, usePathname } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { MealsLogProvider } from "@/src/context/MealsLogContext";
 import { UiVariantProvider } from "@/src/context/UiVariantContext";
@@ -9,11 +10,14 @@ import { hydrateStorage } from "@/src/lib/storage";
 import { OverlayHost } from "@/src/layout/PhoneOverlay";
 import WebPhonePreview from "@/src/layout/WebPhonePreview";
 import LogMenuHost from "@/src/ui/LogMenuHost";
+import AppBootScreen from "@/src/ui/AppBootScreen";
 import { rehydrateCoachThread } from "@/src/services/coachService";
 import { rehydrateProfile } from "@/src/services/profileService";
 import { rehydrateWeek } from "@/src/services/weekReviewService";
 import { installWebInputFocusReset } from "@/src/lib/webInputFocus";
 import { colors } from "@/src/theme/colors";
+
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 const webInsets = {
   frame: { x: 0, y: 0, width: 393, height: 793 },
@@ -45,7 +49,10 @@ export default function RootLayout() {
         rehydrateWeek();
         rehydrateCoachThread();
       })
-      .finally(() => setReady(true));
+      .finally(() => {
+        setReady(true);
+        void SplashScreen.hideAsync();
+      });
   }, []);
 
   if (isLegal) {
@@ -64,9 +71,7 @@ export default function RootLayout() {
     return (
       <UiVariantProvider>
         <WebPhonePreview>
-          <View style={styles.boot}>
-            <ActivityIndicator color={colors.accentBlue} />
-          </View>
+          <AppBootScreen />
         </WebPhonePreview>
       </UiVariantProvider>
     );
@@ -104,12 +109,6 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  boot: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   app: {
     flex: 1,
   },

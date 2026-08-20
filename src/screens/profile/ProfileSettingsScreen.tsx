@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import ScrollableScreen from "@/src/layout/ScrollableScreen";
+import { logout } from "@/src/services/profileService";
 import SettingsGroup, { SettingsDivider } from "@/src/ui/profile/SettingsGroup";
 import SettingsRow from "@/src/ui/profile/SettingsRow";
+import ConfirmSheet from "@/src/ui/profile/ConfirmSheet";
 import ProfileNavHeader from "@/src/ui/profile/ProfileNavHeader";
 import { pushProfile } from "./nav";
 import { openLegalPage } from "@/src/lib/legal";
@@ -9,6 +12,8 @@ import { colors } from "@/src/theme/colors";
 import { profileRowDividerInset } from "@/src/ui/profile/iconSpec";
 
 export default function ProfileSettingsScreen() {
+  const [confirmLogout, setConfirmLogout] = useState(false);
+
   return (
     <ScrollableScreen backgroundColor={colors.profileBlack}>
       <ProfileNavHeader title="Settings" onBack={() => router.back()} />
@@ -44,6 +49,24 @@ export default function ProfileSettingsScreen() {
         <SettingsDivider inset={profileRowDividerInset} />
         <SettingsRow icon="file" label="Community Guidelines" onPress={() => void openLegalPage("community")} />
       </SettingsGroup>
+
+      <SettingsGroup>
+        <SettingsRow icon="logout" label="Log Out" destructive showChevron={false} onPress={() => setConfirmLogout(true)} />
+      </SettingsGroup>
+
+      <ConfirmSheet
+        visible={confirmLogout}
+        title="Log out"
+        body="This will clear your session and return you to sign in."
+        confirmLabel="Log out"
+        destructive
+        onCancel={() => setConfirmLogout(false)}
+        onConfirm={() => {
+          logout();
+          setConfirmLogout(false);
+          router.replace("/login");
+        }}
+      />
     </ScrollableScreen>
   );
 }

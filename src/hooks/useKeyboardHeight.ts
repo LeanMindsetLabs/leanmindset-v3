@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Keyboard, Platform } from "react-native";
+import { Dimensions, Keyboard, Platform } from "react-native";
 import { getWebKeyboardHeight, subscribeWebKeyboard } from "@/src/lib/webKeyboard";
 
 /** Keyboard overlap in px. Use as paddingBottom so sheets and footers stay visible. */
@@ -12,7 +12,10 @@ export function useKeyboardHeight() {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
     const show = Keyboard.addListener(showEvent, (event) => {
-      setNativeHeight(event.endCoordinates.height);
+      const { height, screenY } = event.endCoordinates;
+      const windowHeight = Dimensions.get("window").height;
+      const overlap = windowHeight - screenY;
+      setNativeHeight(overlap > 0 ? overlap : height);
     });
     const hide = Keyboard.addListener(hideEvent, () => setNativeHeight(0));
     return () => {

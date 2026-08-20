@@ -27,6 +27,7 @@ import {
 } from "@/src/services/coachService";
 import { colors } from "@/src/theme/colors";
 import { layout } from "@/src/theme/layout";
+import { spacing } from "@/src/theme/spacing";
 import AvatarBadge from "@/src/ui/AvatarBadge";
 import CheckInAskCard from "@/src/ui/CheckInAskCard";
 import InsightCard from "@/src/ui/InsightCard";
@@ -79,9 +80,9 @@ export default function CoachChat() {
 
   const composerPadBottom =
     keyboardInset > 0
-      ? Math.max(8, keyboardInset - insets.bottom)
+      ? keyboardInset + spacing.sm
       : composing
-        ? insets.bottom + 8
+        ? insets.bottom + spacing.sm
         : layout.tabBarContentInset;
 
   function enterChat() {

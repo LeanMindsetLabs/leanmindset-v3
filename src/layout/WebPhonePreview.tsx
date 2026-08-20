@@ -17,6 +17,10 @@ export default function WebPhonePreview({ children }: { children: ReactNode }) {
 
   if (Platform.OS !== "web") return children;
 
+  if (typeof window !== "undefined" && window.location.search.includes("storeShot=1")) {
+    return <>{children}</>;
+  }
+
   const scale = Math.min(1, (width - 48) / 430, (height - 72) / 920);
 
   return (
