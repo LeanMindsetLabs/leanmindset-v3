@@ -1,0 +1,11 @@
+# LeanMindset V3 — App Store metadata & screenshots upload (no binary).
+# Pass API key via CLI flags or APP_STORE_CONNECT_API_KEY_* env vars.
+
+app_identifier("app.leanmindset.labs")
+
+skip_binary_upload(true)
+skip_metadata(true)
+skip_screenshots(false)
+overwrite_screenshots(true)
+run_precheck_before_submit(false)
+force(true)
