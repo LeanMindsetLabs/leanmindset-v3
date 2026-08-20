@@ -3,6 +3,7 @@ import { type Href, router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { homeContent as content } from "@/src/services/homeContent";
+import { useProfile } from "@/src/hooks/useProfile";
 import { colors } from "@/src/theme/colors";
 import { layout } from "@/src/theme/layout";
 import BlueCta from "@/src/ui/BlueCta";
@@ -11,6 +12,11 @@ import HomeHeroChart from "@/src/ui/HomeHeroChart";
 import { LeanMindsetWordmark } from "@/src/ui/LeanMindsetBrand";
 
 export default function HomeScreen() {
+  const { profile } = useProfile();
+  const firstName = profile.user.name.split(" ")[0] || "there";
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
   return (
     <SafeAreaView edges={["top"]} style={styles.screen}>
       <View style={styles.atmosphere} />
@@ -25,9 +31,9 @@ export default function HomeScreen() {
             <Ionicons name="notifications-outline" size={22} color={colors.white} />
           </Pressable>
           <LeanMindsetWordmark size={20} style={styles.greetBrand} />
-          <Avatar />
+          <Avatar initial={profile.user.initial} />
         </View>
-        <Text style={styles.greetTitle}>{content.greeting}</Text>
+        <Text style={styles.greetTitle}>{`${hello}, ${firstName}!`}</Text>
         <Text style={styles.greetSub}>{content.whoopSubgreeting}</Text>
 
         <HomeHeroChart />
@@ -71,7 +77,7 @@ export default function HomeScreen() {
   );
 }
 
-function Avatar() {
+function Avatar({ initial }: { initial: string }) {
   return (
     <Pressable
       style={styles.avatar}
@@ -79,7 +85,7 @@ function Avatar() {
       accessibilityLabel="Profile"
       onPress={() => router.push("/(tabs)/profile/" as Href)}
     >
-      <Text style={styles.avatarText}>{content.avatarInitial}</Text>
+      <Text style={styles.avatarText}>{initial}</Text>
       <View style={styles.online} />
     </Pressable>
   );

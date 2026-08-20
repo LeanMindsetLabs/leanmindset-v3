@@ -53,6 +53,28 @@ export type Achievement = {
   unlocked: boolean;
 };
 
+export type GoalType = "lose" | "maintain" | "recomp" | "build";
+export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "athlete";
+export type WorkoutExperience = "new" | "returning" | "consistent";
+
+export type OnboardingResult = {
+  name: string;
+  gender: string;
+  birthdayLabel: string;
+  heightCm: number;
+  heightUnit: "cm" | "in";
+  weightLb: number;
+  units: "lb" | "kg";
+  goalType: GoalType;
+  goalLabel: string;
+  targetWeightKg: number;
+  activityLevel: ActivityLevel;
+  workoutExperience: WorkoutExperience;
+  healthConditions: string[];
+  kcalTarget: number;
+  proteinTarget: number;
+};
+
 export type ProfileUser = {
   id: string;
   name: string;
@@ -84,12 +106,25 @@ export type ProfileState = {
   goalLabel: string;
   targetWeightKg: number;
   goalProgress: number;
+  goalType: GoalType;
+  activityLevel: ActivityLevel;
+  workoutExperience: WorkoutExperience;
+  healthConditions: string[];
+  kcalTarget: number;
+  proteinTarget: number;
+  onboardingComplete: boolean;
   membership: MembershipInfo;
   achievements: Achievement[];
 };
 
 const SESSION_KEY = "lm-session";
 const PROFILE_KEY = "lm-profile";
+const HAS_ACCOUNT_KEY = "lm-has-account";
+const PENDING_EMAIL_KEY = "lm-pending-email";
+const FIRST_TIME_FLOW_KEY = "lm-first-time-flow";
+
+/** Mock OTP — any 6 digits accepted until a real email backend is wired. */
+export const MOCK_OTP_CODE = "123456";
 
 export const defaultUser: ProfileUser = {
   id: "mani-a",
@@ -163,6 +198,13 @@ export const defaultProfile: ProfileState = {
   goalLabel: "Lose 6 kg",
   targetWeightKg: 60,
   goalProgress: 0.65,
+  goalType: "lose",
+  activityLevel: "moderate",
+  workoutExperience: "returning",
+  healthConditions: [],
+  kcalTarget: 2100,
+  proteinTarget: 140,
+  onboardingComplete: true,
   membership: {
     planName: "Premium Plan",
     interval: "Annual",
@@ -208,7 +250,7 @@ function readJson<T>(key: string): T | null {
 
 export function rehydrateProfile() {
   profile = loadProfile();
-  session = readJson<ProfileUser>(SESSION_KEY) ?? defaultUser;
+  session = readJson<ProfileUser>(SESSION_KEY);
   notify();
 }
 
@@ -222,9 +264,10 @@ function mergeProfile(saved: Partial<ProfileState> | null): ProfileState {
     program: { ...defaultProfile.program, ...saved.program },
     preferences: { ...defaultProfile.preferences, ...saved.preferences },
     membership: { ...defaultProfile.membership, ...saved.membership },
-    weightHistory: saved.weightHistory && saved.weightHistory.length >= 12 ? saved.weightHistory : defaultProfile.weightHistory,
-    weightLb: saved.weightHistory && saved.weightHistory.length >= 12 ? saved.weightLb ?? defaultProfile.weightLb : defaultProfile.weightLb,
-    weightDeltaLb: saved.weightHistory && saved.weightHistory.length >= 12 ? saved.weightDeltaLb ?? defaultProfile.weightDeltaLb : defaultProfile.weightDeltaLb,
+    healthConditions: saved.healthConditions ?? defaultProfile.healthConditions,
+    weightHistory: saved.weightHistory?.length ? saved.weightHistory : defaultProfile.weightHistory,
+    weightLb: saved.weightLb ?? defaultProfile.weightLb,
+    weightDeltaLb: saved.weightDeltaLb ?? defaultProfile.weightDeltaLb,
     achievements:
       saved.achievements?.length &&
       saved.achievements.every((item) => "tone" in item && "mark" in item && "caption" in item) &&
@@ -239,7 +282,56 @@ function loadProfile(): ProfileState {
 }
 
 let profile: ProfileState = loadProfile();
-let session: ProfileUser | null = readJson<ProfileUser>(SESSION_KEY) ?? defaultUser;
+let session: ProfileUser | null = readJson<ProfileUser>(SESSION_KEY);
+
+export function hasStoredAccount() {
+  return appStorage.getItem(HAS_ACCOUNT_KEY) === "1";
+}
+
+export function setPendingEmail(email: string) {
+  appStorage.setItem(PENDING_EMAIL_KEY, email.trim());
+}
+
+export function getPendingEmail() {
+  return appStorage.getItem(PENDING_EMAIL_KEY);
+}
+
+export function clearPendingEmail() {
+  appStorage.removeItem(PENDING_EMAIL_KEY);
+}
+
+export function setFirstTimeFlow(active: boolean) {
+  if (active) appStorage.setItem(FIRST_TIME_FLOW_KEY, "1");
+  else appStorage.removeItem(FIRST_TIME_FLOW_KEY);
+}
+
+export function isFirstTimeFlow() {
+  return appStorage.getItem(FIRST_TIME_FLOW_KEY) === "1";
+}
+
+/** Returns true for any 6-digit code (mock — no real email OTP backend yet). */
+export function verifyOtpCode(code: string) {
+  return /^\d{6}$/.test(code.trim());
+}
+
+function markHasAccount() {
+  appStorage.setItem(HAS_ACCOUNT_KEY, "1");
+}
+
+function buildUserFromEmail(email: string): ProfileUser {
+  const trimmed = email.trim() || defaultUser.email;
+  const local = trimmed.split("@")[0] ?? "User";
+  const name =
+    trimmed === defaultUser.email
+      ? defaultUser.name
+      : local.replace(/[._-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return {
+    ...defaultUser,
+    email: trimmed,
+    name,
+    initial: (name[0] || "M").toUpperCase(),
+  };
+}
 
 export function getProfile() {
   return profile;
@@ -256,20 +348,48 @@ export function subscribeProfile(fn: () => void) {
   };
 }
 
-export function login(email: string) {
-  const trimmed = email.trim() || defaultUser.email;
-  const name = trimmed === defaultUser.email ? defaultUser.name : trimmed.split("@")[0];
-  session = {
-    ...defaultUser,
-    email: trimmed,
-    name,
-    initial: (name[0] || "M").toUpperCase(),
-  };
-  profile = { ...defaultProfile, user: session };
+export function requestEmailOtp(email: string) {
+  const trimmed = email.trim();
+  if (!trimmed.includes("@")) return null;
+  setPendingEmail(trimmed);
+  return trimmed;
+}
+
+export function completeOtpLogin(email: string, options?: { firstTime?: boolean }) {
+  const user = buildUserFromEmail(email);
+  session = user;
+  markHasAccount();
+  clearPendingEmail();
+
+  if (options?.firstTime) {
+    profile = {
+      ...defaultProfile,
+      user,
+      onboardingComplete: false,
+      goalProgress: 0,
+      streakDays: 0,
+      consistencyPct: 0,
+      workoutsCount: 0,
+      leanScore: 50,
+      leanStatus: "Getting started",
+    };
+  } else {
+    const saved = readJson<ProfileState>(PROFILE_KEY);
+    profile = saved ? mergeProfile(saved) : { ...defaultProfile, user };
+    profile = { ...profile, user: { ...profile.user, email: user.email, name: user.name, initial: user.initial } };
+  }
+
+  setFirstTimeFlow(false);
   persistSession(session);
   persistProfile(profile);
   notify();
   return session;
+}
+
+/** @deprecated Use requestEmailOtp + completeOtpLogin. Kept for dev shortcuts. */
+export function login(email: string) {
+  setFirstTimeFlow(true);
+  return completeOtpLogin(email, { firstTime: true });
 }
 
 export function logout() {
@@ -277,6 +397,8 @@ export function logout() {
   profile = { ...defaultProfile, user: { ...defaultUser } };
   persistSession(null);
   appStorage.removeItem(PROFILE_KEY);
+  clearPendingEmail();
+  setFirstTimeFlow(false);
   notify();
 }
 
@@ -328,6 +450,59 @@ export function setAppleHealthConnected(connected: boolean) {
 
 export function updatePreferences(patch: Partial<AppPreferences>) {
   profile = { ...profile, preferences: { ...profile.preferences, ...patch } };
+  persistProfile(profile);
+  notify();
+}
+
+export function completeOnboarding(result: OnboardingResult) {
+  const now = new Date();
+  const memberSinceLabel = now.toLocaleString("en-US", { month: "short", year: "numeric" });
+  const date = now.toISOString().slice(0, 10);
+  const label = now.toLocaleString("en-US", { month: "short", day: "numeric" });
+  const user: ProfileUser = {
+    ...profile.user,
+    name: result.name,
+    initial: result.name.trim()[0]?.toUpperCase() || profile.user.initial,
+    gender: result.gender,
+    birthdayLabel: result.birthdayLabel,
+    heightCm: result.heightCm,
+    memberSinceLabel,
+  };
+  session = user;
+  profile = {
+    ...profile,
+    user,
+    onboardingComplete: true,
+    weightLb: result.weightLb,
+    weightDeltaLb: 0,
+    measurements: { ...profile.measurements, weight: result.weightLb },
+    weightHistory: [{ date, label, lb: result.weightLb }],
+    preferences: {
+      ...profile.preferences,
+      units: result.units,
+      heightUnit: result.heightUnit,
+    },
+    goalType: result.goalType,
+    goalLabel: result.goalLabel,
+    targetWeightKg: result.targetWeightKg,
+    goalProgress: 0,
+    activityLevel: result.activityLevel,
+    workoutExperience: result.workoutExperience,
+    healthConditions: result.healthConditions,
+    kcalTarget: result.kcalTarget,
+    proteinTarget: result.proteinTarget,
+    leanScore: 50,
+    leanStatus: "Getting started",
+    streakDays: 0,
+    consistencyPct: 0,
+    workoutsCount: 0,
+    program: {
+      ...profile.program,
+      day: 1,
+      phase: result.workoutExperience === "consistent" ? "Build" : "Foundation",
+    },
+  };
+  persistSession(session);
   persistProfile(profile);
   notify();
 }

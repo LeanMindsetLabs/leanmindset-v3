@@ -67,7 +67,7 @@ export default function ProfileSectionScreen() {
           <SettingsDivider />
           <SettingsRow label="Upcoming" value={profile.program.upcoming} showChevron={false} />
           <SettingsDivider />
-          <SettingsRow label="Difficulty" value="Beginner" showChevron={false} />
+          <SettingsRow label="Difficulty" value={profile.workoutExperience === "new" ? "Beginner" : profile.workoutExperience === "consistent" ? "Advanced" : "Intermediate"} showChevron={false} />
         </SettingsGroup>
       ) : null}
 
@@ -75,9 +75,9 @@ export default function ProfileSectionScreen() {
         <SettingsGroup>
           <SettingsRow label="Style" value="High protein" showChevron={false} />
           <SettingsDivider />
-          <SettingsRow label="Daily calories" value="2,100 kcal" showChevron={false} />
+          <SettingsRow label="Daily calories" value={`${profile.kcalTarget.toLocaleString()} kcal`} showChevron={false} />
           <SettingsDivider />
-          <SettingsRow label="Protein target" value="140 g" showChevron={false} />
+          <SettingsRow label="Protein target" value={`${profile.proteinTarget} g`} showChevron={false} />
         </SettingsGroup>
       ) : null}
 
@@ -105,6 +105,12 @@ export default function ProfileSectionScreen() {
                 thumbColor={colors.white}
               />
             }
+          />
+          <SettingsDivider />
+          <SettingsRow
+            label="Health notes"
+            value={profile.healthConditions.length ? profile.healthConditions.join(", ") : "None noted"}
+            showChevron={false}
           />
           <SettingsDivider />
           <SettingsRow label="Health Connect" value="Coming soon" showChevron={false} />
