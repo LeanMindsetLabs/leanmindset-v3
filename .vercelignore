@@ -1,0 +1,7 @@
+.tmp-site-shots
+fastlane/screenshots
+fastlane/report.xml
+.asc-browser-profile
+playwright-report
+test-results
+*.pma
